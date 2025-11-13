@@ -6,6 +6,7 @@ import { ContactDialog } from "@/components/contact-dialog"
 import { ContactsTable } from "@/components/contacts-table"
 import { Plus } from "lucide-react"
 import type { Contact } from "@/lib/cloudflare-kv"
+import { parseJsonResponse } from "@/lib/utils"
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -20,7 +21,7 @@ export default function ContactsPage() {
   const loadContacts = async () => {
     try {
       const response = await fetch("/api/contacts")
-      const data = await response.json()
+      const data = await parseJsonResponse<Contact[]>(response)
       setContacts(data)
     } catch (error) {
       console.error("[v0] Error loading contacts:", error)
@@ -37,7 +38,7 @@ export default function ContactsPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(contactData),
         })
-        const updated = await response.json()
+        const updated = await parseJsonResponse<Contact>(response)
         setContacts(contacts.map((c) => (c.id === updated.id ? updated : c)))
       } else {
         const response = await fetch("/api/contacts", {
@@ -45,7 +46,7 @@ export default function ContactsPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(contactData),
         })
-        const newContact = await response.json()
+        const newContact = await parseJsonResponse<Contact>(response)
         setContacts([...contacts, newContact])
       }
       setEditingContact(null)

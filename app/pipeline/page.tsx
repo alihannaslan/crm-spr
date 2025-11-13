@@ -6,6 +6,7 @@ import { PipelineColumn } from "@/components/pipeline-column"
 import { DealDialog } from "@/components/deal-dialog"
 import { Plus } from "lucide-react"
 import type { Deal, Contact } from "@/lib/cloudflare-kv"
+import { parseJsonResponse } from "@/lib/utils"
 
 const STAGES = [
   { id: "lead", title: "Potansiyel" },
@@ -29,7 +30,10 @@ export default function PipelinePage() {
   const loadData = async () => {
     try {
       const [dealsRes, contactsRes] = await Promise.all([fetch("/api/deals"), fetch("/api/contacts")])
-      const [dealsData, contactsData] = await Promise.all([dealsRes.json(), contactsRes.json()])
+      const [dealsData, contactsData] = await Promise.all([
+        parseJsonResponse<Deal[]>(dealsRes),
+        parseJsonResponse<Contact[]>(contactsRes),
+      ])
       setDeals(dealsData)
       setContacts(contactsData)
     } catch (error) {
@@ -46,7 +50,7 @@ export default function PipelinePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stage: newStage }),
       })
-      const updated = await response.json()
+      const updated = await parseJsonResponse<Deal>(response)
       setDeals(deals.map((d) => (d.id === updated.id ? updated : d)))
     } catch (error) {
       console.error("[v0] Error updating deal:", error)
@@ -77,7 +81,7 @@ export default function PipelinePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(dealData),
         })
-        const updated = await response.json()
+        const updated = await parseJsonResponse<Deal>(response)
         setDeals(deals.map((d) => (d.id === updated.id ? updated : d)))
       } else {
         const response = await fetch("/api/deals", {
@@ -85,7 +89,7 @@ export default function PipelinePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(dealData),
         })
-        const newDeal = await response.json()
+        const newDeal = await parseJsonResponse<Deal>(response)
         setDeals([...deals, newDeal])
       }
       setEditingDeal(null)

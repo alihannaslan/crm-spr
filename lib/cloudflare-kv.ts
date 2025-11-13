@@ -1,14 +1,33 @@
-const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
-const namespaceId = process.env.CLOUDFLARE_KV_NAMESPACE_ID
-const apiToken = process.env.CLOUDFLARE_API_TOKEN ?? process.env.CLOUDFLARE_KV_API_TOKEN
-
-if (!accountId || !namespaceId || !apiToken) {
-  throw new Error("Cloudflare KV environment variables are missing. Please set CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_KV_NAMESPACE_ID, and CLOUDFLARE_API_TOKEN.")
+type KVConfig = {
+  baseUrl: string
+  apiToken: string
 }
 
-const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}`
+let cachedConfig: KVConfig | null = null
+
+function getKVConfig(): KVConfig {
+  if (cachedConfig) {
+    return cachedConfig
+  }
+
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
+  const namespaceId = process.env.CLOUDFLARE_KV_NAMESPACE_ID
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN ?? process.env.CLOUDFLARE_KV_API_TOKEN
+
+  if (!accountId || !namespaceId || !apiToken) {
+    throw new Error("Cloudflare KV environment variables are missing. Please set CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_KV_NAMESPACE_ID, and CLOUDFLARE_API_TOKEN.")
+  }
+
+  cachedConfig = {
+    baseUrl: `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}`,
+    apiToken,
+  }
+
+  return cachedConfig
+}
 
 async function kvRequest(path: string, init?: RequestInit) {
+  const { baseUrl, apiToken } = getKVConfig()
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiToken}`,
   }
