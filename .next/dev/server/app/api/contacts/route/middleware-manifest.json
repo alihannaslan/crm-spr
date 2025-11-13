@@ -1,0 +1,43 @@
+{
+  "sorted_middleware": [
+    "/api/contacts/route"
+  ],
+  "middleware": {},
+  "instrumentation": null,
+  "functions": {
+    "/api/contacts/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/server-reference-manifest.js",
+        "server/app/api/contacts/route_client-reference-manifest.js",
+        "server/edge/chunks/_next-internal_server_app_api_contacts_route_actions_dd20eb3f.js",
+        "server/edge/chunks/f0026_next_dist_esm_shared_lib_41357fc3._.js",
+        "server/edge/chunks/f0026_next_dist_esm_server_f2989c66._.js",
+        "server/edge/chunks/f0026_next_dist_esm_79d06f4f._.js",
+        "server/edge/chunks/f0026_next_dist_compiled_1fd7e1d6._.js",
+        "server/edge/chunks/f0026_next_dist_1c145531._.js",
+        "server/edge/chunks/edge-wrapper_cc13181d.js",
+        "server/edge/chunks/[root-of-the-server]__f4b647c3._.js",
+        "server/edge/chunks/turbopack-edge-wrapper_32023130.js"
+      ],
+      "name": "app/api/contacts/route",
+      "page": "/api/contacts/route",
+      "matchers": [
+        {
+          "regexp": "^/api/contacts(?:/)?$",
+          "originalSource": "/api/contacts"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "development",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "sdfWyEvpdZqI5y/b+h+kjQsYDWrdqeei4SCbB2nJwTc=",
+        "__NEXT_PREVIEW_MODE_ID": "f987aa44e3e44f0f8b289a5b08f809fe",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "d5cdb253c858f9fc13d34aa3dd819d2875679cf7f10d05e668c9c4890a8d4e0b",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "25e66083bed8db27c3c237e36078c7593f7c0d6e80056e85d929797bc804ee79"
+      }
+    }
+  }
+}

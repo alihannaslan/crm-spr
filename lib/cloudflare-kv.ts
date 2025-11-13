@@ -2,13 +2,110 @@
 
 export const runtime = "edge"
 
-declare const CRM_SPR_KV: KVNamespace
-
-export async function GET() {
-  const value = await CRM_SPR_KV.get("test")
-  return Response.json({ value })
+declare global {
+  // eslint-disable-next-line no-var
+  var CRM_SPR_KV: KVNamespace | undefined
 }
 
+function resolveKVBinding(): KVNamespace | undefined {
+  if (typeof globalThis === "object" && "CRM_SPR_KV" in globalThis) {
+    const binding = (globalThis as { CRM_SPR_KV?: KVNamespace }).CRM_SPR_KV
+    if (binding) {
+      return binding
+    }
+  }
+  return undefined
+}
+
+const inMemoryStore = new Map<string, string>()
+
+type KVValue = Parameters<KVNamespace["put"]>[1]
+
+async function kvValueToString(value: KVValue): Promise<string> {
+  if (typeof value === "string") {
+    return value
+  }
+  if (typeof value === "object" && value !== null) {
+    if (value instanceof ArrayBuffer) {
+      return new TextDecoder().decode(new Uint8Array(value))
+    }
+    if (ArrayBuffer.isView(value)) {
+      return new TextDecoder().decode(new Uint8Array(value.buffer))
+    }
+    if (typeof FormData !== "undefined" && value instanceof FormData) {
+      const params = new URLSearchParams()
+      for (const [key, entry] of value.entries()) {
+        if (typeof entry === "string") {
+          params.append(key, entry)
+        }
+      }
+      return params.toString()
+    }
+    if (typeof URLSearchParams !== "undefined" && value instanceof URLSearchParams) {
+      return value.toString()
+    }
+    if (typeof Blob !== "undefined" && value instanceof Blob) {
+      return await value.text()
+    }
+    if (value instanceof ReadableStream) {
+      const reader = value.getReader()
+      const chunks: Uint8Array[] = []
+      // Aggregate streamed chunks into a single buffer
+      for (;;) {
+        const { done, value: chunk } = await reader.read()
+        if (done) {
+          break
+        }
+        if (chunk) {
+          chunks.push(chunk)
+        }
+      }
+      if (chunks.length === 0) {
+        return ""
+      }
+      const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+      const merged = new Uint8Array(totalLength)
+      let offset = 0
+      for (const chunk of chunks) {
+        merged.set(chunk, offset)
+        offset += chunk.length
+      }
+      return new TextDecoder().decode(merged)
+    }
+  }
+  throw new Error("In-memory KV fallback only supports string-compatible values. Provide CRM_SPR_KV binding for other types.")
+}
+
+const fallbackKV = {
+  async get(key: string) {
+    return inMemoryStore.get(key) ?? null
+  },
+  async getWithMetadata(key: string) {
+    const value = inMemoryStore.get(key) ?? null
+    return { value, metadata: null }
+  },
+  async put(key: string, value: KVValue) {
+    const serialized = await kvValueToString(value)
+    inMemoryStore.set(key, serialized)
+  },
+  async delete(key: string) {
+    inMemoryStore.delete(key)
+  },
+  async list(options?: KVNamespaceListOptions) {
+    const prefix = options?.prefix ?? ""
+    const keys = Array.from(inMemoryStore.keys())
+      .filter((name) => name.startsWith(prefix))
+      .map((name) => ({ name }))
+    return { keys, list_complete: true, cursor: undefined }
+  },
+} as unknown as KVNamespace
+
+export const kv = resolveKVBinding() ?? fallbackKV
+
+export async function GET() {
+  const value = await kv.get("test")
+  return Response.json({ value })
+}
 
 
 type KVConfig = {
@@ -164,7 +261,7 @@ export async function getContacts(): Promise<Contact[]> {
     }),
   )
 
-  return contacts.filter(Boolean)
+  return contacts.filter((contact): contact is Contact => contact !== null)
 }
 
 export async function getContact(id: string): Promise<Contact | null> {
@@ -231,7 +328,7 @@ export async function getDeals(): Promise<Deal[]> {
     }),
   )
 
-  return deals.filter(Boolean)
+  return deals.filter((deal): deal is Deal => deal !== null)
 }
 
 export async function getDeal(id: string): Promise<Deal | null> {

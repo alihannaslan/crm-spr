@@ -1,0 +1,127 @@
+{
+  "version": 3,
+  "middleware": {},
+  "functions": {
+    "/api/contacts/route": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/api/contacts/route_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/edge-chunks/577.js",
+        "server/app/api/contacts/route.js"
+      ],
+      "name": "app/api/contacts/route",
+      "page": "/api/contacts/route",
+      "matchers": [
+        {
+          "regexp": "^/api/contacts$",
+          "originalSource": "/api/contacts"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "8kHG3qRD93m9aJ1YgB0ks",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "IfOHQIl0hexAMn3twdt6OYZ+mZSpQtQkSlTlPKY1g/o=",
+        "__NEXT_PREVIEW_MODE_ID": "8336d9bdb47d7306931c8b3f7cd9601c",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "2dcedc8429fe5328d91c95a01801dbb680ad78647f07ce7c979bad1cca15472a",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "b27b5e4f9307ac4ebdab2952207f561f6d3b8e890055c713bd22abc554830100"
+      }
+    },
+    "/api/deals/route": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/api/deals/route_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/edge-chunks/577.js",
+        "server/app/api/deals/route.js"
+      ],
+      "name": "app/api/deals/route",
+      "page": "/api/deals/route",
+      "matchers": [
+        {
+          "regexp": "^/api/deals$",
+          "originalSource": "/api/deals"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "8kHG3qRD93m9aJ1YgB0ks",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "IfOHQIl0hexAMn3twdt6OYZ+mZSpQtQkSlTlPKY1g/o=",
+        "__NEXT_PREVIEW_MODE_ID": "8336d9bdb47d7306931c8b3f7cd9601c",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "2dcedc8429fe5328d91c95a01801dbb680ad78647f07ce7c979bad1cca15472a",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "b27b5e4f9307ac4ebdab2952207f561f6d3b8e890055c713bd22abc554830100"
+      }
+    },
+    "/api/contacts/[id]/route": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/api/contacts/[id]/route_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/edge-chunks/577.js",
+        "server/app/api/contacts/[id]/route.js"
+      ],
+      "name": "app/api/contacts/[id]/route",
+      "page": "/api/contacts/[id]/route",
+      "matchers": [
+        {
+          "regexp": "^/api/contacts/(?<id>[^/]+?)$",
+          "originalSource": "/api/contacts/[id]"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "8kHG3qRD93m9aJ1YgB0ks",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "IfOHQIl0hexAMn3twdt6OYZ+mZSpQtQkSlTlPKY1g/o=",
+        "__NEXT_PREVIEW_MODE_ID": "8336d9bdb47d7306931c8b3f7cd9601c",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "2dcedc8429fe5328d91c95a01801dbb680ad78647f07ce7c979bad1cca15472a",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "b27b5e4f9307ac4ebdab2952207f561f6d3b8e890055c713bd22abc554830100"
+      }
+    },
+    "/api/deals/[id]/route": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/api/deals/[id]/route_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/edge-chunks/577.js",
+        "server/app/api/deals/[id]/route.js"
+      ],
+      "name": "app/api/deals/[id]/route",
+      "page": "/api/deals/[id]/route",
+      "matchers": [
+        {
+          "regexp": "^/api/deals/(?<id>[^/]+?)$",
+          "originalSource": "/api/deals/[id]"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "8kHG3qRD93m9aJ1YgB0ks",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "IfOHQIl0hexAMn3twdt6OYZ+mZSpQtQkSlTlPKY1g/o=",
+        "__NEXT_PREVIEW_MODE_ID": "8336d9bdb47d7306931c8b3f7cd9601c",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "2dcedc8429fe5328d91c95a01801dbb680ad78647f07ce7c979bad1cca15472a",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "b27b5e4f9307ac4ebdab2952207f561f6d3b8e890055c713bd22abc554830100"
+      }
+    }
+  },
+  "sortedMiddleware": []
+}

@@ -1,5 +1,5 @@
 {
-  "/api/contacts/route": "app/api/contacts/route.js",
+  "/api/contacts/route": "app-edge-has-no-entrypoint",
   "/contacts/page": "app/contacts/page.js",
   "/page": "app/page.js"
 }

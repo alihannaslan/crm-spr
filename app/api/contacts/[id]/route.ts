@@ -1,46 +1,92 @@
-import { NextResponse } from "next/server"
-import { getContact, updateContact, deleteContact } from "@/lib/cloudflare-kv"
+import { NextRequest, NextResponse } from "next/server"
+import { kv } from "@/lib/cloudflare-kv"
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const runtime: "edge" = "edge"
+
+type Contact = {
+  id: string
+  name: string
+  email?: string
+  phone?: string
+  company?: string
+  createdAt: string
+  updatedAt?: string
+}
+
+const KV_KEY = "contacts"
+
+async function loadContacts(): Promise<Contact[]> {
+  const raw = await kv.get(KV_KEY)
+  if (!raw) return []
   try {
-    const { id } = await params
-    const contact = await getContact(id)
-
-    if (!contact) {
-      return NextResponse.json({ error: "Contact not found" }, { status: 404 })
-    }
-
-    return NextResponse.json(contact)
-  } catch (error) {
-    console.error("[v0] Error fetching contact:", error)
-    return NextResponse.json({ error: "Failed to fetch contact" }, { status: 500 })
+    const parsed = JSON.parse(raw as string)
+    return Array.isArray(parsed) ? (parsed as Contact[]) : []
+  } catch {
+    return []
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id } = await params
-    const body = await request.json()
-    const contact = await updateContact(id, body)
-
-    if (!contact) {
-      return NextResponse.json({ error: "Contact not found" }, { status: 404 })
-    }
-
-    return NextResponse.json(contact)
-  } catch (error) {
-    console.error("[v0] Error updating contact:", error)
-    return NextResponse.json({ error: "Failed to update contact" }, { status: 500 })
-  }
+async function saveContacts(contacts: Contact[]) {
+  await kv.put(KV_KEY, JSON.stringify(contacts))
 }
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id } = await params
-    await deleteContact(id)
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error("[v0] Error deleting contact:", error)
-    return NextResponse.json({ error: "Failed to delete contact" }, { status: 500 })
+type RouteContext = {
+  params: Promise<{ id: string }>
+}
+
+async function resolveId(context: RouteContext) {
+  const { id } = await context.params
+  return id
+}
+
+// GET /api/contacts/[id]
+export async function GET(_req: NextRequest, context: RouteContext) {
+  const contacts = await loadContacts()
+  const contactId = await resolveId(context)
+  const contact = contacts.find((c) => c.id === contactId)
+
+  if (!contact) {
+    return NextResponse.json({ error: "Contact not found" }, { status: 404 })
   }
+
+  return NextResponse.json(contact)
+}
+
+// PUT /api/contacts/[id]
+export async function PUT(req: NextRequest, context: RouteContext) {
+  const contacts = await loadContacts()
+  const contactId = await resolveId(context)
+  const index = contacts.findIndex((c) => c.id === contactId)
+
+  if (index === -1) {
+    return NextResponse.json({ error: "Contact not found" }, { status: 404 })
+  }
+
+  const body = (await req.json()) as Partial<Contact>
+
+  const updated: Contact = {
+    ...contacts[index],
+    ...body,
+    id: contactId,
+    updatedAt: new Date().toISOString(),
+  }
+
+  contacts[index] = updated
+  await saveContacts(contacts)
+
+  return NextResponse.json(updated)
+}
+
+// DELETE /api/contacts/[id]
+export async function DELETE(_req: NextRequest, context: RouteContext) {
+  const contacts = await loadContacts()
+  const contactId = await resolveId(context)
+  const newContacts = contacts.filter((c) => c.id !== contactId)
+
+  if (newContacts.length === contacts.length) {
+    return NextResponse.json({ error: "Contact not found" }, { status: 404 })
+  }
+
+  await saveContacts(newContacts)
+  return NextResponse.json({ ok: true })
 }

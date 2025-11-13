@@ -36,12 +36,20 @@ const STAGES = [
 ]
 
 export function DealDialog({ open, onOpenChange, deal, contacts, onSave }: DealDialogProps) {
-  const [formData, setFormData] = useState({
-    title: deal?.title || "",
-    value: deal?.value?.toString() || "",
-    contactId: deal?.contactId || "",
-    stage: deal?.stage || "lead",
-    description: deal?.description || "",
+  type FormState = {
+    title: string
+    value: string
+    contactId: string
+    stage: Deal["stage"]
+    description: string
+  }
+
+  const [formData, setFormData] = useState<FormState>({
+    title: deal?.title ?? "",
+    value: deal?.value?.toString() ?? "",
+    contactId: deal?.contactId ?? "",
+    stage: deal?.stage ?? "lead",
+    description: deal?.description ?? "",
   })
 
   useEffect(() => {
@@ -49,9 +57,9 @@ export function DealDialog({ open, onOpenChange, deal, contacts, onSave }: DealD
       setFormData({
         title: deal.title,
         value: deal.value.toString(),
-        contactId: deal.contactId,
+        contactId: deal.contactId ?? "",
         stage: deal.stage,
-        description: deal.description,
+        description: deal.description ?? "",
       })
     } else {
       setFormData({
@@ -128,7 +136,10 @@ export function DealDialog({ open, onOpenChange, deal, contacts, onSave }: DealD
             </div>
             <div className="grid gap-2">
               <Label htmlFor="stage">Aşama</Label>
-              <Select value={formData.stage} onValueChange={(value) => setFormData({ ...formData, stage: value })}>
+              <Select
+                value={formData.stage}
+                onValueChange={(value) => setFormData({ ...formData, stage: value as Deal["stage"] })}
+              >
                 <SelectTrigger id="stage">
                   <SelectValue />
                 </SelectTrigger>
