@@ -1,3 +1,16 @@
+/// <reference types="@cloudflare/workers-types" />
+
+export const runtime = "edge"
+
+declare const CRM_SPR_KV: KVNamespace
+
+export async function GET() {
+  const value = await CRM_SPR_KV.get("test")
+  return Response.json({ value })
+}
+
+
+
 type KVConfig = {
   baseUrl: string
   apiToken: string
