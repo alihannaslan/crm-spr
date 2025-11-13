@@ -1,0 +1,5 @@
+.next/cache/**
+.next/types/**
+.next/trace
+.next/trace-build
+.next/diagnostics/**

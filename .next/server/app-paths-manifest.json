@@ -1,11 +1,11 @@
 {
   "/_global-error/page": "app/_global-error/page.js",
   "/_not-found/page": "app/_not-found/page.js",
+  "/contacts/page": "app/contacts/page.js",
   "/page": "app/page.js",
   "/pipeline/page": "app/pipeline/page.js",
-  "/contacts/page": "app/contacts/page.js",
   "/api/contacts/route": "app/api/contacts/route.js",
   "/api/deals/route": "app/api/deals/route.js",
-  "/api/contacts/[id]/route": "app/api/contacts/[id]/route.js",
-  "/api/deals/[id]/route": "app/api/deals/[id]/route.js"
+  "/api/deals/[id]/route": "app/api/deals/[id]/route.js",
+  "/api/contacts/[id]/route": "app/api/contacts/[id]/route.js"
 }
