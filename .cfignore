@@ -1,5 +1,41 @@
-.next/cache/**
-.next/types/**
+# -------------------------
+# Cloudflare Pages Ignore File
+# -------------------------
+
+# Node + git garbage
+node_modules
+.git
+.gitignore
+*.log
+
+# Local env files (prod'da Cloudflare Environment vars kullanılmalı)
+.env
+.env.local
+.env.development
+.env.production
+
+# Next.js output directories that should NOT be deployed
+.next/cache
+.next/types
 .next/trace
 .next/trace-build
-.next/diagnostics/**
+.next/diagnostics
+
+# Optional: Source maps (25MB limit geçmesini engeller)
+.next/**/*.map
+
+# Testing files (optional)
+__tests__/
+coverage/
+*.test.*
+*.spec.*
+
+# OS / IDE trash
+.DS_Store
+.vscode
+.idea
+
+# Package manager logs / leftovers
+pnpm-debug.log
+npm-debug.log
+yarn-error.log
