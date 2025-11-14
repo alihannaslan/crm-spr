@@ -1,230 +1,55 @@
-/// <reference types="@cloudflare/workers-types" />
+import type { KVNamespace } from "@cloudflare/workers-types"
 
 export const runtime = "edge"
 
+/* ---------------------------
+   KV Binding + Fallback
+---------------------------- */
+
 declare global {
+  // Cloudflare Pages deploy sırasında bunu global'e enjekte eder
   // eslint-disable-next-line no-var
   var CRM_SPR_KV: KVNamespace | undefined
 }
 
-function resolveKVBinding(): KVNamespace | undefined {
-  if (typeof globalThis === "object" && "CRM_SPR_KV" in globalThis) {
-    const binding = (globalThis as { CRM_SPR_KV?: KVNamespace }).CRM_SPR_KV
-    if (binding) {
-      return binding
-    }
-  }
-  return undefined
-}
-
-const inMemoryStore = new Map<string, string>()
-
-type KVValue = Parameters<KVNamespace["put"]>[1]
-
-async function kvValueToString(value: KVValue): Promise<string> {
-  if (typeof value === "string") {
-    return value
-  }
-  if (typeof value === "object" && value !== null) {
-    if (value instanceof ArrayBuffer) {
-      return new TextDecoder().decode(new Uint8Array(value))
-    }
-    if (ArrayBuffer.isView(value)) {
-      return new TextDecoder().decode(new Uint8Array(value.buffer))
-    }
-    if (typeof FormData !== "undefined" && value instanceof FormData) {
-      const params = new URLSearchParams()
-      for (const [key, entry] of value.entries()) {
-        if (typeof entry === "string") {
-          params.append(key, entry)
-        }
-      }
-      return params.toString()
-    }
-    if (typeof URLSearchParams !== "undefined" && value instanceof URLSearchParams) {
-      return value.toString()
-    }
-    if (typeof Blob !== "undefined" && value instanceof Blob) {
-      return await value.text()
-    }
-    if (value instanceof ReadableStream) {
-      const reader = value.getReader()
-      const chunks: Uint8Array[] = []
-      // Aggregate streamed chunks into a single buffer
-      for (;;) {
-        const { done, value: chunk } = await reader.read()
-        if (done) {
-          break
-        }
-        if (chunk) {
-          chunks.push(chunk)
-        }
-      }
-      if (chunks.length === 0) {
-        return ""
-      }
-      const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
-      const merged = new Uint8Array(totalLength)
-      let offset = 0
-      for (const chunk of chunks) {
-        merged.set(chunk, offset)
-        offset += chunk.length
-      }
-      return new TextDecoder().decode(merged)
-    }
-  }
-  throw new Error("In-memory KV fallback only supports string-compatible values. Provide CRM_SPR_KV binding for other types.")
-}
-
-const fallbackKV = {
-  async get(key: string) {
-    return inMemoryStore.get(key) ?? null
-  },
-  async getWithMetadata(key: string) {
-    const value = inMemoryStore.get(key) ?? null
-    return { value, metadata: null }
-  },
-  async put(key: string, value: KVValue) {
-    const serialized = await kvValueToString(value)
-    inMemoryStore.set(key, serialized)
-  },
-  async delete(key: string) {
-    inMemoryStore.delete(key)
-  },
-  async list(options?: KVNamespaceListOptions) {
-    const prefix = options?.prefix ?? ""
-    const keys = Array.from(inMemoryStore.keys())
-      .filter((name) => name.startsWith(prefix))
-      .map((name) => ({ name }))
-    return { keys, list_complete: true, cursor: undefined }
-  },
-} as unknown as KVNamespace
-
-export const kv = resolveKVBinding() ?? fallbackKV
-
-export async function GET() {
-  const value = await kv.get("test")
-  return Response.json({ value })
-}
-
-
-type KVConfig = {
-  baseUrl: string
-  apiToken: string
-}
-
-let cachedConfig: KVConfig | null = null
-
-function getKVConfig(): KVConfig {
-  if (cachedConfig) {
-    return cachedConfig
+function getKV(): KVNamespace {
+  if (globalThis.CRM_SPR_KV) {
+    return globalThis.CRM_SPR_KV
   }
 
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
-  const namespaceId = process.env.CLOUDFLARE_KV_NAMESPACE_ID
-  const apiToken = process.env.CLOUDFLARE_API_TOKEN ?? process.env.CLOUDFLARE_KV_API_TOKEN
+  // Local dev fallback (in-memory store)
+  const store = new Map<string, string>()
 
-  if (!accountId || !namespaceId || !apiToken) {
-    throw new Error("Cloudflare KV environment variables are missing. Please set CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_KV_NAMESPACE_ID, and CLOUDFLARE_API_TOKEN.")
-  }
-
-  cachedConfig = {
-    baseUrl: `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}`,
-    apiToken,
-  }
-
-  return cachedConfig
-}
-
-async function kvRequest(path: string, init?: RequestInit) {
-  const { baseUrl, apiToken } = getKVConfig()
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${apiToken}`,
-  }
-
-  if (init?.headers) {
-    if (init.headers instanceof Headers) {
-      init.headers.forEach((value, key) => {
-        headers[key] = value
-      })
-    } else if (Array.isArray(init.headers)) {
-      for (const [key, value] of init.headers) {
-        headers[key] = value
-      }
-    } else {
-      Object.assign(headers, init.headers as Record<string, string>)
-    }
-  }
-
-  const res = await fetch(`${baseUrl}${path}`, {
-    ...init,
-    headers,
-  })
-
-  if (!res.ok && res.status !== 404) {
-    const message = await res.text()
-    throw new Error(`Cloudflare KV request failed (${res.status}): ${message}`)
-  }
-
-  return res
-}
-
-async function kvGet<T>(key: string): Promise<T | null> {
-  const res = await kvRequest(`/values/${encodeURIComponent(key)}`)
-  if (res.status === 404) {
-    return null
-  }
-  const text = await res.text()
-  return text ? (JSON.parse(text) as T) : null
-}
-
-async function kvSet<T>(key: string, value: T) {
-  await kvRequest(`/values/${encodeURIComponent(key)}`, {
-    method: "PUT",
-    body: JSON.stringify(value),
-    headers: {
-      "Content-Type": "application/json",
+  return {
+    async get(key: string) {
+      return store.get(key) ?? null
     },
-  })
+    async put(key: string, value: string) {
+      store.set(key, value)
+    },
+    async delete(key: string) {
+      store.delete(key)
+    },
+    async list(options?: { prefix?: string }) {
+      const prefix = options?.prefix ?? ""
+      const keys = [...store.keys()]
+        .filter((k) => k.startsWith(prefix))
+        .map((name) => ({ name }))
+
+      return {
+        keys,
+        list_complete: true,
+      } as any
+    },
+  } as KVNamespace
 }
 
-async function kvDelete(key: string) {
-  await kvRequest(`/values/${encodeURIComponent(key)}`, {
-    method: "DELETE",
-  })
-}
+export const kv = getKV()
 
-async function listKeys(prefix: string): Promise<string[]> {
-  let keys: string[] = []
-  let cursor: string | undefined
+/* ---------------------------
+   Types
+---------------------------- */
 
-  do {
-    const params = new URLSearchParams({
-      limit: "1000",
-      prefix,
-    })
-    if (cursor) {
-      params.set("cursor", cursor)
-    }
-
-    const res = await kvRequest(`/keys?${params.toString()}`)
-    if (res.status === 404) {
-      break
-    }
-
-    const data = (await res.json()) as {
-      result: Array<{ name: string }>
-      result_info?: { cursor?: string }
-    }
-
-    keys = keys.concat(data.result.map((item) => item.name))
-    cursor = data.result_info?.cursor
-  } while (cursor)
-
-  return keys
-}
-
-// Type definitions
 export interface Contact {
   id: string
   name: string
@@ -236,141 +61,160 @@ export interface Contact {
   updatedAt: string
 }
 
+export type DealStage =
+  | "lead"
+  | "qualified"
+  | "proposal"
+  | "negotiation"
+  | "won"
+  | "lost"
+
 export interface Deal {
   id: string
   title: string
   value: number
   contactId: string
-  stage: "lead" | "qualified" | "proposal" | "negotiation" | "won" | "lost"
+  stage: DealStage
   description: string
   createdAt: string
   updatedAt: string
 }
 
-// Contact operations
+/* ---------------------------
+   Helpers
+---------------------------- */
+
+const CONTACT_PREFIX = "contact:"
+const DEAL_PREFIX = "deal:"
+
+async function kvGetJson<T>(key: string): Promise<T | null> {
+  const raw = await kv.get(key)
+  if (!raw) return null
+  return JSON.parse(raw) as T
+}
+
+async function kvSetJson<T>(key: string, value: T): Promise<void> {
+  await kv.put(key, JSON.stringify(value))
+}
+
+/* ---------------------------
+   Contact CRUD
+---------------------------- */
+
 export async function getContacts(): Promise<Contact[]> {
-  const contactKeys = await listKeys("contact:")
-  if (contactKeys.length === 0) {
-    return []
+  const list = await kv.list({ prefix: CONTACT_PREFIX })
+  const contacts: Contact[] = []
+
+  for (const item of list.keys) {
+    const c = await kvGetJson<Contact>(item.name)
+    if (c) contacts.push(c)
   }
 
-  const contacts = await Promise.all(
-    contactKeys.map(async (key) => {
-      const contact = await kvGet<Contact>(key)
-      return contact
-    }),
-  )
-
-  return contacts.filter((contact): contact is Contact => contact !== null)
+  return contacts
 }
 
 export async function getContact(id: string): Promise<Contact | null> {
-  return kvGet<Contact>(`contact:${id}`)
+  return kvGetJson<Contact>(`${CONTACT_PREFIX}${id}`)
 }
 
-export async function createContact(contact: Omit<Contact, "id" | "createdAt" | "updatedAt">): Promise<Contact> {
-  const id = `contact_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+export async function createContact(
+  data: Omit<Contact, "id" | "createdAt" | "updatedAt">,
+): Promise<Contact> {
+  const id = crypto.randomUUID()
   const now = new Date().toISOString()
 
-  const newContact: Contact = {
-    ...contact,
+  const contact: Contact = {
+    ...data,
     id,
     createdAt: now,
     updatedAt: now,
   }
 
-  await kvSet(`contact:${id}`, newContact)
-
-  return newContact
+  await kvSetJson(`${CONTACT_PREFIX}${id}`, contact)
+  return contact
 }
 
-export async function updateContact(id: string, updates: Partial<Contact>): Promise<Contact | null> {
-  const contact = await getContact(id)
+export async function updateContact(
+  id: string,
+  updates: Partial<Contact>,
+): Promise<Contact | null> {
+  const existing = await getContact(id)
+  if (!existing) return null
 
-  if (!contact) {
-    return null
-  }
-
-  const updatedContact: Contact = {
-    ...contact,
+  const updated: Contact = {
+    ...existing,
     ...updates,
-    id: contact.id,
-    createdAt: contact.createdAt,
+    id: existing.id,
+    createdAt: existing.createdAt,
     updatedAt: new Date().toISOString(),
   }
 
-  await kvSet(`contact:${id}`, updatedContact)
-  return updatedContact
+  await kvSetJson(`${CONTACT_PREFIX}${id}`, updated)
+  return updated
 }
 
 export async function deleteContact(id: string): Promise<boolean> {
-  await kvDelete(`contact:${id}`)
-
-  // Delete associated deals
-  const deals = await getDeals()
-  const contactDeals = deals.filter((deal) => deal.contactId === id)
-  await Promise.all(contactDeals.map((deal) => deleteDeal(deal.id)))
-
+  await kv.delete(`${CONTACT_PREFIX}${id}`)
   return true
 }
 
-// Deal operations
+/* ---------------------------
+   Deal CRUD
+---------------------------- */
+
 export async function getDeals(): Promise<Deal[]> {
-  const dealKeys = await listKeys("deal:")
-  if (dealKeys.length === 0) {
-    return []
+  const list = await kv.list({ prefix: DEAL_PREFIX })
+  const deals: Deal[] = []
+
+  for (const item of list.keys) {
+    const d = await kvGetJson<Deal>(item.name)
+    if (d) deals.push(d)
   }
 
-  const deals = await Promise.all(
-    dealKeys.map(async (key) => {
-      const deal = await kvGet<Deal>(key)
-      return deal
-    }),
-  )
-
-  return deals.filter((deal): deal is Deal => deal !== null)
+  return deals
 }
 
 export async function getDeal(id: string): Promise<Deal | null> {
-  return kvGet<Deal>(`deal:${id}`)
+  return kvGetJson<Deal>(`${DEAL_PREFIX}${id}`)
 }
 
-export async function createDeal(deal: Omit<Deal, "id" | "createdAt" | "updatedAt">): Promise<Deal> {
-  const id = `deal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+export async function createDeal(
+  data: Omit<Deal, "id" | "createdAt" | "updatedAt">,
+): Promise<Deal> {
+  const id = crypto.randomUUID()
   const now = new Date().toISOString()
 
-  const newDeal: Deal = {
-    ...deal,
+  const deal: Deal = {
+    ...data,
     id,
     createdAt: now,
     updatedAt: now,
   }
 
-  await kvSet(`deal:${id}`, newDeal)
-
-  return newDeal
+  await kvSetJson(`${DEAL_PREFIX}${id}`, deal)
+  return deal
 }
 
-export async function updateDeal(id: string, updates: Partial<Deal>): Promise<Deal | null> {
-  const deal = await getDeal(id)
+export async function updateDeal(
+  id: string,
+  updates: Partial<Deal>,
+): Promise<Deal | null> {
+  const existing = await getDeal(id)
+  if (!existing) return null
 
-  if (!deal) {
-    return null
-  }
-
-  const updatedDeal: Deal = {
-    ...deal,
+  const updated: Deal = {
+    ...existing,
     ...updates,
-    id: deal.id,
-    createdAt: deal.createdAt,
+    id: existing.id,
+    createdAt: existing.createdAt,
     updatedAt: new Date().toISOString(),
   }
 
-  await kvSet(`deal:${id}`, updatedDeal)
-  return updatedDeal
+  await kvSetJson(`${DEAL_PREFIX}${id}`, updated)
+  return updated
 }
 
 export async function deleteDeal(id: string): Promise<boolean> {
-  await kvDelete(`deal:${id}`)
+  await kv.delete(`${DEAL_PREFIX}${id}`)
   return true
 }

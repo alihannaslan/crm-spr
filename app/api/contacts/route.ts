@@ -1,69 +1,55 @@
-import { NextRequest, NextResponse } from "next/server";
-import { kv } from "@/lib/cloudflare-kv";
+// @ts-nocheck
+import { NextRequest, NextResponse } from "next/server"
+import { getContacts, createContact } from "@/lib/cloudflare-kv"
 
-export const runtime = "edge";
+export const runtime = "edge"
 
-const KV_KEY = "contacts";
-
-type Contact = {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  company?: string;
-  createdAt: string;
-  updatedAt?: string;
-};
-
-async function loadContacts(): Promise<Contact[]> {
-  const raw = (await kv.get(KV_KEY)) as string | null;
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-async function saveContacts(contacts: Contact[]) {
-  await kv.put(KV_KEY, JSON.stringify(contacts));
-}
-
+// GET /api/contact → tüm contact'lar
 export async function GET() {
-  const contacts = await loadContacts();
-  return NextResponse.json(contacts);
+  try {
+    const contacts = await getContacts()
+    return NextResponse.json(contacts)
+  } catch (error) {
+    console.error("GET /api/contact error:", error)
+    return NextResponse.json(
+      { error: "Contacts could not be loaded" },
+      { status: 500 },
+    )
+  }
 }
 
+// POST /api/contact → yeni contact oluştur
 export async function POST(req: NextRequest) {
-  const raw = (await req.json()) as any;
+  try {
+    const body = await req.json()
 
-  // FRONTEND FORM ve eski API ile uyumlu olacak şekilde fallback
-  const name = (raw.name ?? raw.title ?? "").toString().trim();
-  const email = raw.email ?? "";
-  const phone = raw.phone ?? "";
-  const company = raw.company ?? "";
+    const name = (body?.name ?? "").toString().trim()
+    const email = (body?.email ?? "").toString().trim()
+    const phone = (body?.phone ?? "").toString().trim()
+    const company = (body?.company ?? "").toString().trim()
+    const position = (body?.position ?? "").toString().trim()
 
-  if (!name) {
+    if (!name) {
+      return NextResponse.json(
+        { error: "Name is required" },
+        { status: 400 },
+      )
+    }
+
+    const newContact = await createContact({
+      name,
+      email,
+      phone,
+      company,
+      position,
+    })
+
+    return NextResponse.json(newContact, { status: 201 })
+  } catch (error) {
+    console.error("POST /api/contact error:", error)
     return NextResponse.json(
-      { error: "name alanı zorunludur" },
-      { status: 400 }
-    );
+      { error: "Contact could not be created" },
+      { status: 500 },
+    )
   }
-
-  const contacts = await loadContacts();
-
-  const newContact: Contact = {
-    id: crypto.randomUUID(),
-    name,
-    email,
-    phone,
-    company,
-    createdAt: new Date().toISOString(),
-  };
-
-  contacts.push(newContact);
-  await saveContacts(contacts);
-
-  return NextResponse.json(newContact, { status: 201 });
 }

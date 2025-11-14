@@ -1,11 +1,11 @@
 {
   "/_not-found/page": "/_not-found",
   "/_global-error/page": "/_global-error",
-  "/page": "/",
-  "/contacts/page": "/contacts",
   "/pipeline/page": "/pipeline",
+  "/contacts/page": "/contacts",
+  "/page": "/",
   "/api/contacts/route": "/api/contacts",
-  "/api/deals/route": "/api/deals",
   "/api/contacts/[id]/route": "/api/contacts/[id]",
-  "/api/deals/[id]/route": "/api/deals/[id]"
+  "/api/deals/[id]/route": "/api/deals/[id]",
+  "/api/deals/route": "/api/deals"
 }
