@@ -1,64 +1,89 @@
-// app/api/deals/route.ts
+// app/api/deals/[id]/route.ts
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server"
-import { getDeals, createDeal } from "@/lib/cloudflare-kv"
+import { getDeal, updateDeal, deleteDeal } from "@/lib/cloudflare-kv"
 
 export const runtime = "edge"
 
-// GET /api/deals → tüm fırsatlar
-export async function GET() {
+// GET /api/deals/[id]
+export async function GET(_req: NextRequest, context: any) {
   try {
-    const deals = await getDeals()
-    return NextResponse.json(deals)
+    const { id } = await context.params
+    const deal = await getDeal(id)
+
+    if (!deal) {
+      return NextResponse.json({ error: "Deal not found" }, { status: 404 })
+    }
+
+    return NextResponse.json(deal)
   } catch (error) {
-    console.error("GET /api/deals error:", error)
+    console.error("GET /api/deals/[id] error:", error)
     return NextResponse.json(
-      { error: "Deals could not be loaded" },
+      { error: "Deal could not be loaded" },
       { status: 500 },
     )
   }
 }
 
-// POST /api/deals → yeni fırsat oluştur
-export async function POST(req: NextRequest) {
+// PUT /api/deals/[id]  → tam / kısmi update
+export async function PUT(req: NextRequest, context: any) {
   try {
+    const { id } = await context.params
     const body = await req.json()
 
-    const title = (body?.title ?? "").toString().trim()
-    const valueRaw = body?.value
-    const contactId = (body?.contactId ?? "").toString().trim()
-    const stage = (body?.stage ?? "lead").toString().trim()
-    const description = (body?.description ?? "").toString().trim()
+    const updates: any = {}
 
-    const value = typeof valueRaw === "number" ? valueRaw : Number(valueRaw)
-
-    if (!title) {
-      return NextResponse.json(
-        { error: "title is required" },
-        { status: 400 },
-      )
+    if (typeof body?.title !== "undefined") {
+      updates.title = body.title
+    }
+    if (typeof body?.value !== "undefined") {
+      updates.value =
+        typeof body.value === "number" ? body.value : Number(body.value)
+    }
+    if (typeof body?.contactId !== "undefined") {
+      updates.contactId = body.contactId
+    }
+    if (typeof body?.stage !== "undefined") {
+      updates.stage = body.stage
+    }
+    if (typeof body?.description !== "undefined") {
+      updates.description = body.description
     }
 
-    if (!Number.isFinite(value) || value < 0) {
-      return NextResponse.json(
-        { error: "value must be a positive number" },
-        { status: 400 },
-      )
+    const updated = await updateDeal(id, updates)
+
+    if (!updated) {
+      return NextResponse.json({ error: "Deal not found" }, { status: 404 })
     }
 
-    const newDeal = await createDeal({
-      title,
-      value,
-      contactId,
-      stage,
-      description,
-    })
-
-    return NextResponse.json(newDeal, { status: 201 })
+    return NextResponse.json(updated)
   } catch (error) {
-    console.error("POST /api/deals error:", error)
+    console.error("PUT /api/deals/[id] error:", error)
     return NextResponse.json(
-      { error: "Deal could not be created" },
+      { error: "Deal could not be updated" },
+      { status: 500 },
+    )
+  }
+}
+
+// PATCH /api/deals/[id] → frontend’in gönderdiği method
+export async function PATCH(req: NextRequest, context: any) {
+  // Aynı mantığı kullanıyoruz
+  return PUT(req, context)
+}
+
+// DELETE /api/deals/[id]
+export async function DELETE(_req: NextRequest, context: any) {
+  try {
+    const { id } = await context.params
+
+    await deleteDeal(id)
+
+    return NextResponse.json({ deleted: true })
+  } catch (error) {
+    console.error("DELETE /api/deals/[id] error:", error)
+    return NextResponse.json(
+      { error: "Deal could not be deleted" },
       { status: 500 },
     )
   }

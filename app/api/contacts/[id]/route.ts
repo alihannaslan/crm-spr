@@ -25,7 +25,7 @@ export async function GET(_req: NextRequest, context: any) {
   }
 }
 
-// PUT /api/contacts/[id] → kısmi update
+// PUT /api/contacts/[id]
 export async function PUT(req: NextRequest, context: any) {
   try {
     const { id } = await context.params
@@ -63,6 +63,11 @@ export async function PUT(req: NextRequest, context: any) {
       { status: 500 },
     )
   }
+}
+
+// PATCH /api/contacts/[id] → form muhtemelen PATCH gönderiyor
+export async function PATCH(req: NextRequest, context: any) {
+  return PUT(req, context)
 }
 
 // DELETE /api/contacts/[id]
