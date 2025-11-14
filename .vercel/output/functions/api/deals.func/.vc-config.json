@@ -1,0 +1,18 @@
+{
+  "runtime": "edge",
+  "name": "api/deals",
+  "deploymentTarget": "v8-worker",
+  "entrypoint": "index.js",
+  "assets": [],
+  "framework": {
+    "slug": "nextjs",
+    "version": "16.0.0"
+  },
+  "environment": {
+    "__NEXT_BUILD_ID": "PaS5UdhGfKLn0ea5USUay",
+    "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "IfOHQIl0hexAMn3twdt6OYZ+mZSpQtQkSlTlPKY1g/o=",
+    "__NEXT_PREVIEW_MODE_ID": "8336d9bdb47d7306931c8b3f7cd9601c",
+    "__NEXT_PREVIEW_MODE_SIGNING_KEY": "2dcedc8429fe5328d91c95a01801dbb680ad78647f07ce7c979bad1cca15472a",
+    "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "b27b5e4f9307ac4ebdab2952207f561f6d3b8e890055c713bd22abc554830100"
+  }
+}
