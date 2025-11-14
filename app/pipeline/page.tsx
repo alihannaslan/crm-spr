@@ -10,12 +10,12 @@ import type { Deal, Contact } from "@/lib/cloudflare-kv"
 import { parseJsonResponse } from "@/lib/utils"
 
 const STAGES: { id: Deal["stage"]; title: string }[] = [
-  { id: "lead", title: "Lead" },
-  { id: "qualified", title: "Nitelikli" },
-  { id: "proposal", title: "Teklif" },
+  { id: "lead",        title: "Lead" },
+  { id: "qualified",   title: "Nitelikli" },
+  { id: "proposal",    title: "Teklif" },
   { id: "negotiation", title: "Pazarlık" },
-  { id: "won", title: "Kazanıldı" },
-  { id: "lost", title: "Kaybedildi" },
+  { id: "won",         title: "Kazanıldı" },
+  { id: "lost",        title: "Kaybedildi" },
 ]
 
 export default function PipelinePage() {
