@@ -4,7 +4,9 @@
 
 __turbopack_context__.s([
     "cn",
-    ()=>cn
+    ()=>cn,
+    "parseJsonResponse",
+    ()=>parseJsonResponse
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$clsx$40$2$2e$1$2e$1$2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$tailwind$2d$merge$40$2$2e$6$2e$0$2f$node_modules$2f$tailwind$2d$merge$2f$dist$2f$bundle$2d$mjs$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/tailwind-merge@2.6.0/node_modules/tailwind-merge/dist/bundle-mjs.mjs [app-client] (ecmascript)");
@@ -12,6 +14,27 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$ta
 ;
 function cn(...inputs) {
     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$tailwind$2d$merge$40$2$2e$6$2e$0$2f$node_modules$2f$tailwind$2d$merge$2f$dist$2f$bundle$2d$mjs$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["twMerge"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$clsx$40$2$2e$1$2e$1$2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["clsx"])(inputs));
+}
+async function parseJsonResponse(response) {
+    const text = await response.text();
+    const fallback = `${response.status} ${response.statusText}`.trim();
+    const hasText = text.length > 0;
+    let parsed = null;
+    if (hasText) {
+        try {
+            parsed = JSON.parse(text);
+        } catch (error) {
+            if (!response.ok) {
+                throw new Error(text || fallback || "Request failed");
+            }
+            throw error;
+        }
+    }
+    if (!response.ok) {
+        const errorMessage = (parsed && typeof parsed.error === "string" ? parsed.error : hasText ? text : fallback) || "Request failed";
+        throw new Error(errorMessage);
+    }
+    return parsed;
 }
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
@@ -1514,11 +1537,11 @@ const STAGES = [
 function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
     _s();
     const [formData, setFormData] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])({
-        title: deal?.title || "",
-        value: deal?.value?.toString() || "",
-        contactId: deal?.contactId || "",
-        stage: deal?.stage || "lead",
-        description: deal?.description || ""
+        title: deal?.title ?? "",
+        value: deal?.value?.toString() ?? "",
+        contactId: deal?.contactId ?? "",
+        stage: deal?.stage ?? "lead",
+        description: deal?.description ?? ""
     });
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "DealDialog.useEffect": ()=>{
@@ -1526,9 +1549,9 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                 setFormData({
                     title: deal.title,
                     value: deal.value.toString(),
-                    contactId: deal.contactId,
+                    contactId: deal.contactId ?? "",
                     stage: deal.stage,
-                    description: deal.description
+                    description: deal.description ?? ""
                 });
             } else {
                 setFormData({
@@ -1566,20 +1589,20 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                 children: deal ? "Fırsatı Düzenle" : "Yeni Fırsat Ekle"
                             }, void 0, false, {
                                 fileName: "[project]/components/deal-dialog.tsx",
-                                lineNumber: 81,
+                                lineNumber: 89,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
                                 children: deal ? "Fırsat bilgilerini güncelleyin." : "Yeni bir satış fırsatı eklemek için bilgileri doldurun."
                             }, void 0, false, {
                                 fileName: "[project]/components/deal-dialog.tsx",
-                                lineNumber: 82,
+                                lineNumber: 90,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/deal-dialog.tsx",
-                        lineNumber: 80,
+                        lineNumber: 88,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1593,7 +1616,7 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                         children: "Başlık"
                                     }, void 0, false, {
                                         fileName: "[project]/components/deal-dialog.tsx",
-                                        lineNumber: 88,
+                                        lineNumber: 96,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1607,13 +1630,13 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                         required: true
                                     }, void 0, false, {
                                         fileName: "[project]/components/deal-dialog.tsx",
-                                        lineNumber: 89,
+                                        lineNumber: 97,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/deal-dialog.tsx",
-                                lineNumber: 87,
+                                lineNumber: 95,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1624,7 +1647,7 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                         children: "Değer (TRY)"
                                     }, void 0, false, {
                                         fileName: "[project]/components/deal-dialog.tsx",
-                                        lineNumber: 98,
+                                        lineNumber: 106,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1641,13 +1664,13 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                         required: true
                                     }, void 0, false, {
                                         fileName: "[project]/components/deal-dialog.tsx",
-                                        lineNumber: 99,
+                                        lineNumber: 107,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/deal-dialog.tsx",
-                                lineNumber: 97,
+                                lineNumber: 105,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1658,7 +1681,7 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                         children: "Kişi"
                                     }, void 0, false, {
                                         fileName: "[project]/components/deal-dialog.tsx",
-                                        lineNumber: 111,
+                                        lineNumber: 119,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -1675,12 +1698,12 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                                     placeholder: "Kişi seçin"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/deal-dialog.tsx",
-                                                    lineNumber: 118,
+                                                    lineNumber: 126,
                                                     columnNumber: 19
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/components/deal-dialog.tsx",
-                                                lineNumber: 117,
+                                                lineNumber: 125,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -1693,24 +1716,24 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                                         ]
                                                     }, contact.id, true, {
                                                         fileName: "[project]/components/deal-dialog.tsx",
-                                                        lineNumber: 122,
+                                                        lineNumber: 130,
                                                         columnNumber: 21
                                                     }, this))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/deal-dialog.tsx",
-                                                lineNumber: 120,
+                                                lineNumber: 128,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/deal-dialog.tsx",
-                                        lineNumber: 112,
+                                        lineNumber: 120,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/deal-dialog.tsx",
-                                lineNumber: 110,
+                                lineNumber: 118,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1721,7 +1744,7 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                         children: "Aşama"
                                     }, void 0, false, {
                                         fileName: "[project]/components/deal-dialog.tsx",
-                                        lineNumber: 130,
+                                        lineNumber: 138,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -1735,12 +1758,12 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                                 id: "stage",
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectValue"], {}, void 0, false, {
                                                     fileName: "[project]/components/deal-dialog.tsx",
-                                                    lineNumber: 133,
+                                                    lineNumber: 144,
                                                     columnNumber: 19
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/components/deal-dialog.tsx",
-                                                lineNumber: 132,
+                                                lineNumber: 143,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -1749,24 +1772,24 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                                         children: stage.label
                                                     }, stage.value, false, {
                                                         fileName: "[project]/components/deal-dialog.tsx",
-                                                        lineNumber: 137,
+                                                        lineNumber: 148,
                                                         columnNumber: 21
                                                     }, this))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/deal-dialog.tsx",
-                                                lineNumber: 135,
+                                                lineNumber: 146,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/deal-dialog.tsx",
-                                        lineNumber: 131,
+                                        lineNumber: 139,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/deal-dialog.tsx",
-                                lineNumber: 129,
+                                lineNumber: 137,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1777,7 +1800,7 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                         children: "Açıklama"
                                     }, void 0, false, {
                                         fileName: "[project]/components/deal-dialog.tsx",
-                                        lineNumber: 145,
+                                        lineNumber: 156,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -1791,19 +1814,19 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                         rows: 3
                                     }, void 0, false, {
                                         fileName: "[project]/components/deal-dialog.tsx",
-                                        lineNumber: 146,
+                                        lineNumber: 157,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/deal-dialog.tsx",
-                                lineNumber: 144,
+                                lineNumber: 155,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/deal-dialog.tsx",
-                        lineNumber: 86,
+                        lineNumber: 94,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -1815,7 +1838,7 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                 children: "İptal"
                             }, void 0, false, {
                                 fileName: "[project]/components/deal-dialog.tsx",
-                                lineNumber: 156,
+                                lineNumber: 167,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1823,33 +1846,33 @@ function DealDialog({ open, onOpenChange, deal, contacts, onSave }) {
                                 children: "Kaydet"
                             }, void 0, false, {
                                 fileName: "[project]/components/deal-dialog.tsx",
-                                lineNumber: 159,
+                                lineNumber: 170,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/deal-dialog.tsx",
-                        lineNumber: 155,
+                        lineNumber: 166,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/deal-dialog.tsx",
-                lineNumber: 79,
+                lineNumber: 87,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/components/deal-dialog.tsx",
-            lineNumber: 78,
+            lineNumber: 86,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/components/deal-dialog.tsx",
-        lineNumber: 77,
+        lineNumber: 85,
         columnNumber: 5
     }, this);
 }
-_s(DealDialog, "QNxUL3I6F/mGsSfXkOvXmMcyjm4=");
+_s(DealDialog, "UhfxJQQgceJHaWKexP3n/cBQIVk=");
 _c = DealDialog;
 var _c;
 __turbopack_context__.k.register(_c, "DealDialog");
@@ -1870,9 +1893,11 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$pipeline$2d$column$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/pipeline-column.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$deal$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/deal-dialog.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$19$2e$2$2e$0$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lucide-react@0.454.0_react@19.2.0/node_modules/lucide-react/dist/esm/icons/plus.js [app-client] (ecmascript) <export default as Plus>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/utils.ts [app-client] (ecmascript)");
 ;
 var _s = __turbopack_context__.k.signature();
 "use client";
+;
 ;
 ;
 ;
@@ -1919,8 +1944,8 @@ function PipelinePage() {
                 fetch("/api/contacts")
             ]);
             const [dealsData, contactsData] = await Promise.all([
-                dealsRes.json(),
-                contactsRes.json()
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["parseJsonResponse"])(dealsRes),
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["parseJsonResponse"])(contactsRes)
             ]);
             setDeals(dealsData);
             setContacts(contactsData);
@@ -1941,7 +1966,7 @@ function PipelinePage() {
                     stage: newStage
                 })
             });
-            const updated = await response.json();
+            const updated = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["parseJsonResponse"])(response);
             setDeals(deals.map((d)=>d.id === updated.id ? updated : d));
         } catch (error) {
             console.error("[v0] Error updating deal:", error);
@@ -1972,7 +1997,7 @@ function PipelinePage() {
                     },
                     body: JSON.stringify(dealData)
                 });
-                const updated = await response.json();
+                const updated = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["parseJsonResponse"])(response);
                 setDeals(deals.map((d)=>d.id === updated.id ? updated : d));
             } else {
                 const response = await fetch("/api/deals", {
@@ -1982,7 +2007,7 @@ function PipelinePage() {
                     },
                     body: JSON.stringify(dealData)
                 });
-                const newDeal = await response.json();
+                const newDeal = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["parseJsonResponse"])(response);
                 setDeals([
                     ...deals,
                     newDeal
@@ -2007,12 +2032,12 @@ function PipelinePage() {
                 children: "Yükleniyor..."
             }, void 0, false, {
                 fileName: "[project]/app/pipeline/page.tsx",
-                lineNumber: 107,
+                lineNumber: 111,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/app/pipeline/page.tsx",
-            lineNumber: 106,
+            lineNumber: 110,
             columnNumber: 7
         }, this);
     }
@@ -2031,7 +2056,7 @@ function PipelinePage() {
                                     children: "Satış Hunisi"
                                 }, void 0, false, {
                                     fileName: "[project]/app/pipeline/page.tsx",
-                                    lineNumber: 117,
+                                    lineNumber: 121,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2039,13 +2064,13 @@ function PipelinePage() {
                                     children: "Fırsatlarınızı takip edin"
                                 }, void 0, false, {
                                     fileName: "[project]/app/pipeline/page.tsx",
-                                    lineNumber: 118,
+                                    lineNumber: 122,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/pipeline/page.tsx",
-                            lineNumber: 116,
+                            lineNumber: 120,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2055,20 +2080,20 @@ function PipelinePage() {
                                     className: "mr-2 h-4 w-4"
                                 }, void 0, false, {
                                     fileName: "[project]/app/pipeline/page.tsx",
-                                    lineNumber: 121,
+                                    lineNumber: 125,
                                     columnNumber: 13
                                 }, this),
                                 "Yeni Fırsat"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/pipeline/page.tsx",
-                            lineNumber: 120,
+                            lineNumber: 124,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/pipeline/page.tsx",
-                    lineNumber: 115,
+                    lineNumber: 119,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2083,12 +2108,12 @@ function PipelinePage() {
                             onDrop: handleDrop
                         }, stage.id, false, {
                             fileName: "[project]/app/pipeline/page.tsx",
-                            lineNumber: 128,
+                            lineNumber: 132,
                             columnNumber: 13
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/app/pipeline/page.tsx",
-                    lineNumber: 126,
+                    lineNumber: 130,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$0_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$deal$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DealDialog"], {
@@ -2099,18 +2124,18 @@ function PipelinePage() {
                     onSave: handleSave
                 }, void 0, false, {
                     fileName: "[project]/app/pipeline/page.tsx",
-                    lineNumber: 141,
+                    lineNumber: 145,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/app/pipeline/page.tsx",
-            lineNumber: 114,
+            lineNumber: 118,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/app/pipeline/page.tsx",
-        lineNumber: 113,
+        lineNumber: 117,
         columnNumber: 5
     }, this);
 }
