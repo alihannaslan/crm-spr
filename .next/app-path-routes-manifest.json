@@ -4,8 +4,8 @@
   "/contacts/page": "/contacts",
   "/page": "/",
   "/pipeline/page": "/pipeline",
-  "/api/contacts/route": "/api/contacts",
   "/api/contacts/[id]/route": "/api/contacts/[id]",
+  "/api/contacts/route": "/api/contacts",
   "/api/deals/[id]/route": "/api/deals/[id]",
   "/api/deals/route": "/api/deals"
 }

@@ -1,5 +1,7 @@
+// lib/cloudflare-kv.ts
 // @ts-nocheck
 import type { KVNamespace } from "@cloudflare/workers-types"
+import { getRequestContext } from "@cloudflare/next-on-pages"
 
 export const runtime = "edge"
 
@@ -7,28 +9,9 @@ export const runtime = "edge"
    KV Binding + Fallback
 ---------------------------- */
 
-// Cloudflare Pages runtime'da: globalThis.CRM_SPR_KV var
-// Local dev / build sırasında: yok → in-memory fallback kullanıyoruz
-
-function resolveKVBinding(): KVNamespace | null {
-  try {
-    if (
-      typeof globalThis === "object" &&
-      globalThis &&
-      "CRM_SPR_KV" in globalThis &&
-      globalThis.CRM_SPR_KV
-    ) {
-      return globalThis.CRM_SPR_KV as KVNamespace
-    }
-  } catch {
-    // ignore
-  }
-  return null
-}
-
 const inMemoryStore = new Map<string, string>()
 
-const fallbackKV = {
+const fallbackKV: KVNamespace = {
   async get(key: string) {
     return inMemoryStore.get(key) ?? null
   },
@@ -47,11 +30,25 @@ const fallbackKV = {
     const keys = Array.from(inMemoryStore.keys())
       .filter((name) => name.startsWith(prefix))
       .map((name) => ({ name }))
+
     return { keys, list_complete: true }
   },
-} as KVNamespace
+} as any
 
-export const kv: KVNamespace = resolveKVBinding() ?? fallbackKV
+function getKV(): KVNamespace {
+  // Cloudflare Pages / next-on-pages runtime
+  try {
+    const ctx = getRequestContext()
+    const env = (ctx as any)?.env
+    const ns = env?.CRM_SPR_KV as KVNamespace | undefined
+    if (ns) return ns
+  } catch {
+    // dev veya build sırasında burası patlar → fallback'e düş
+  }
+
+  // Local dev / build: in-memory KV
+  return fallbackKV
+}
 
 /* ---------------------------
    Types
@@ -94,13 +91,17 @@ export interface Deal {
 const CONTACT_PREFIX = "contact:"
 const DEAL_PREFIX = "deal:"
 
-async function kvGetJson<T>(key: string): Promise<T | null> {
+async function kvGetJson<T>(kv: KVNamespace, key: string): Promise<T | null> {
   const raw = await kv.get(key)
   if (!raw) return null
   return JSON.parse(raw as string) as T
 }
 
-async function kvSetJson<T>(key: string, value: T): Promise<void> {
+async function kvSetJson<T>(
+  kv: KVNamespace,
+  key: string,
+  value: T,
+): Promise<void> {
   await kv.put(key, JSON.stringify(value))
 }
 
@@ -109,11 +110,12 @@ async function kvSetJson<T>(key: string, value: T): Promise<void> {
 ---------------------------- */
 
 export async function getContacts(): Promise<Contact[]> {
+  const kv = getKV()
   const list = await kv.list({ prefix: CONTACT_PREFIX })
   const contacts: Contact[] = []
 
   for (const item of list.keys) {
-    const c = await kvGetJson<Contact>(item.name)
+    const c = await kvGetJson<Contact>(kv, item.name)
     if (c) contacts.push(c)
   }
 
@@ -121,12 +123,14 @@ export async function getContacts(): Promise<Contact[]> {
 }
 
 export async function getContact(id: string): Promise<Contact | null> {
-  return kvGetJson<Contact>(`${CONTACT_PREFIX}${id}`)
+  const kv = getKV()
+  return kvGetJson<Contact>(kv, `${CONTACT_PREFIX}${id}`)
 }
 
 export async function createContact(
   data: Omit<Contact, "id" | "createdAt" | "updatedAt">,
 ): Promise<Contact> {
+  const kv = getKV()
   const id = crypto.randomUUID()
   const now = new Date().toISOString()
 
@@ -137,7 +141,7 @@ export async function createContact(
     updatedAt: now,
   }
 
-  await kvSetJson(`${CONTACT_PREFIX}${id}`, contact)
+  await kvSetJson(kv, `${CONTACT_PREFIX}${id}`, contact)
   return contact
 }
 
@@ -145,6 +149,7 @@ export async function updateContact(
   id: string,
   updates: Partial<Contact>,
 ): Promise<Contact | null> {
+  const kv = getKV()
   const existing = await getContact(id)
   if (!existing) return null
 
@@ -156,11 +161,12 @@ export async function updateContact(
     updatedAt: new Date().toISOString(),
   }
 
-  await kvSetJson(`${CONTACT_PREFIX}${id}`, updated)
+  await kvSetJson(kv, `${CONTACT_PREFIX}${id}`, updated)
   return updated
 }
 
 export async function deleteContact(id: string): Promise<boolean> {
+  const kv = getKV()
   await kv.delete(`${CONTACT_PREFIX}${id}`)
   return true
 }
@@ -170,11 +176,12 @@ export async function deleteContact(id: string): Promise<boolean> {
 ---------------------------- */
 
 export async function getDeals(): Promise<Deal[]> {
+  const kv = getKV()
   const list = await kv.list({ prefix: DEAL_PREFIX })
   const deals: Deal[] = []
 
   for (const item of list.keys) {
-    const d = await kvGetJson<Deal>(item.name)
+    const d = await kvGetJson<Deal>(kv, item.name)
     if (d) deals.push(d)
   }
 
@@ -182,12 +189,14 @@ export async function getDeals(): Promise<Deal[]> {
 }
 
 export async function getDeal(id: string): Promise<Deal | null> {
-  return kvGetJson<Deal>(`${DEAL_PREFIX}${id}`)
+  const kv = getKV()
+  return kvGetJson<Deal>(kv, `${DEAL_PREFIX}${id}`)
 }
 
 export async function createDeal(
   data: Omit<Deal, "id" | "createdAt" | "updatedAt">,
 ): Promise<Deal> {
+  const kv = getKV()
   const id = crypto.randomUUID()
   const now = new Date().toISOString()
 
@@ -198,7 +207,7 @@ export async function createDeal(
     updatedAt: now,
   }
 
-  await kvSetJson(`${DEAL_PREFIX}${id}`, deal)
+  await kvSetJson(kv, `${DEAL_PREFIX}${id}`, deal)
   return deal
 }
 
@@ -206,6 +215,7 @@ export async function updateDeal(
   id: string,
   updates: Partial<Deal>,
 ): Promise<Deal | null> {
+  const kv = getKV()
   const existing = await getDeal(id)
   if (!existing) return null
 
@@ -217,11 +227,12 @@ export async function updateDeal(
     updatedAt: new Date().toISOString(),
   }
 
-  await kvSetJson(`${DEAL_PREFIX}${id}`, updated)
+  await kvSetJson(kv, `${DEAL_PREFIX}${id}`, updated)
   return updated
 }
 
 export async function deleteDeal(id: string): Promise<boolean> {
+  const kv = getKV()
   await kv.delete(`${DEAL_PREFIX}${id}`)
   return true
 }

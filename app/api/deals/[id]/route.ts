@@ -1,92 +1,84 @@
+// app/api/deals/[id]/route.ts
+// @ts-nocheck
 import { NextRequest, NextResponse } from "next/server"
-import { kv } from "@/lib/cloudflare-kv"
+import { getDeal, updateDeal, deleteDeal } from "@/lib/cloudflare-kv"
 
-export const runtime: "edge" = "edge"
-
-type Deal = {
-  id: string
-  title: string
-  value: number
-  contactId?: string
-  status?: string
-  createdAt: string
-  updatedAt?: string
-}
-
-const KV_KEY = "deals"
-
-type RouteContext = {
-  params: Promise<{ id: string }>
-}
-
-async function loadDeals(): Promise<Deal[]> {
-  const raw = await kv.get(KV_KEY)
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw as string)
-    return Array.isArray(parsed) ? (parsed as Deal[]) : []
-  } catch {
-    return []
-  }
-}
-
-async function saveDeals(deals: Deal[]) {
-  await kv.put(KV_KEY, JSON.stringify(deals))
-}
-
-async function resolveId(context: RouteContext) {
-  const { id } = await context.params
-  return id
-}
+export const runtime = "edge"
 
 // GET /api/deals/[id]
-export async function GET(_req: NextRequest, context: RouteContext) {
-  const deals = await loadDeals()
-  const dealId = await resolveId(context)
-  const deal = deals.find((d) => d.id === dealId)
+export async function GET(_req: NextRequest, context: any) {
+  try {
+    const { id } = await context.params
+    const deal = await getDeal(id)
 
-  if (!deal) {
-    return NextResponse.json({ error: "Deal not found" }, { status: 404 })
+    if (!deal) {
+      return NextResponse.json({ error: "Deal not found" }, { status: 404 })
+    }
+
+    return NextResponse.json(deal)
+  } catch (error) {
+    console.error("GET /api/deals/[id] error:", error)
+    return NextResponse.json(
+      { error: "Deal could not be loaded" },
+      { status: 500 },
+    )
   }
-
-  return NextResponse.json(deal)
 }
 
 // PUT /api/deals/[id]
-export async function PUT(req: NextRequest, context: RouteContext) {
-  const deals = await loadDeals()
-  const dealId = await resolveId(context)
-  const index = deals.findIndex((d) => d.id === dealId)
+export async function PUT(req: NextRequest, context: any) {
+  try {
+    const { id } = await context.params
+    const body = await req.json()
 
-  if (index === -1) {
-    return NextResponse.json({ error: "Deal not found" }, { status: 404 })
+    const updates: any = {}
+
+    if (typeof body?.title !== "undefined") {
+      updates.title = body.title
+    }
+    if (typeof body?.value !== "undefined") {
+      updates.value =
+        typeof body.value === "number" ? body.value : Number(body.value)
+    }
+    if (typeof body?.contactId !== "undefined") {
+      updates.contactId = body.contactId
+    }
+    if (typeof body?.stage !== "undefined") {
+      updates.stage = body.stage
+    }
+    if (typeof body?.description !== "undefined") {
+      updates.description = body.description
+    }
+
+    const updated = await updateDeal(id, updates)
+
+    if (!updated) {
+      return NextResponse.json({ error: "Deal not found" }, { status: 404 })
+    }
+
+    return NextResponse.json(updated)
+  } catch (error) {
+    console.error("PUT /api/deals/[id] error:", error)
+    return NextResponse.json(
+      { error: "Deal could not be updated" },
+      { status: 500 },
+    )
   }
-
-  const body = (await req.json()) as Partial<Deal>
-
-  const updated: Deal = {
-    ...deals[index],
-    ...body,
-    id: dealId,
-    updatedAt: new Date().toISOString(),
-  }
-
-  deals[index] = updated
-  await saveDeals(deals)
-
-  return NextResponse.json(updated)
 }
 
 // DELETE /api/deals/[id]
-export async function DELETE(_req: NextRequest, context: RouteContext) {
-  const deals = await loadDeals()
-  const dealId = await resolveId(context)
-  const newDeals = deals.filter((d) => d.id !== dealId)
+export async function DELETE(_req: NextRequest, context: any) {
+  try {
+    const { id } = await context.params
 
-  if (newDeals.length === deals.length) {
-    return NextResponse.json({ error: "Deal not found" }, { status: 404 })
+    await deleteDeal(id)
+
+    return NextResponse.json({ deleted: true })
+  } catch (error) {
+    console.error("DELETE /api/deals/[id] error:", error)
+    return NextResponse.json(
+      { error: "Deal could not be deleted" },
+      { status: 500 },
+    )
   }
-
-  await saveDeals(newDeals)
-  return NextResponse.json({ ok: true })
 }

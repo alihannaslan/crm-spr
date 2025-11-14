@@ -1,73 +1,65 @@
+// app/api/deals/route.ts
+// @ts-nocheck
 import { NextRequest, NextResponse } from "next/server"
-import { kv } from "@/lib/cloudflare-kv"
+import { getDeals, createDeal } from "@/lib/cloudflare-kv"
 
-export const runtime: "edge" = "edge"
+export const runtime = "edge"
 
-type Deal = {
-  id: string
-  title: string
-  value: number
-  contactId?: string
-  status?: string
-  createdAt: string
-  updatedAt?: string
-}
-
-const KV_KEY = "deals"
-
-async function loadDeals(): Promise<Deal[]> {
-  const raw = await kv.get(KV_KEY)
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw as string)
-    return Array.isArray(parsed) ? (parsed as Deal[]) : []
-  } catch {
-    return []
-  }
-}
-
-async function saveDeals(deals: Deal[]) {
-  await kv.put(KV_KEY, JSON.stringify(deals))
-}
-
-// GET /api/deals
+// GET /api/deals → tüm fırsatlar
 export async function GET() {
-  const deals = await loadDeals()
-  return NextResponse.json(deals)
-}
-
-// POST /api/deals
-export async function POST(req: NextRequest) {
-  const body = await req.json()
-
-  const { title, value, contactId, status } = body as {
-    title?: string
-    value?: number
-    contactId?: string
-    status?: string
-  }
-
-  if (!title || typeof value !== "number") {
+  try {
+    const deals = await getDeals()
+    return NextResponse.json(deals)
+  } catch (error) {
+    console.error("GET /api/deals error:", error)
     return NextResponse.json(
-      { error: "title (string) ve value (number) zorunludur" },
-      { status: 400 },
+      { error: "Deals could not be loaded" },
+      { status: 500 },
     )
   }
+}
 
-  const deals = await loadDeals()
-  const now = new Date().toISOString()
+// POST /api/deals → yeni fırsat oluştur
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json()
 
-  const newDeal: Deal = {
-    id: crypto.randomUUID(),
-    title,
-    value,
-    contactId,
-    status: status ?? "open",
-    createdAt: now,
+    const title = (body?.title ?? "").toString().trim()
+    const valueRaw = body?.value
+    const contactId = (body?.contactId ?? "").toString().trim()
+    const stage = (body?.stage ?? "lead").toString().trim()
+    const description = (body?.description ?? "").toString().trim()
+
+    const value = typeof valueRaw === "number" ? valueRaw : Number(valueRaw)
+
+    if (!title) {
+      return NextResponse.json(
+        { error: "title is required" },
+        { status: 400 },
+      )
+    }
+
+    if (!Number.isFinite(value) || value < 0) {
+      return NextResponse.json(
+        { error: "value must be a positive number" },
+        { status: 400 },
+      )
+    }
+
+    const newDeal = await createDeal({
+      title,
+      value,
+      contactId,
+      stage,
+      description,
+    })
+
+    return NextResponse.json(newDeal, { status: 201 })
+  } catch (error) {
+    console.error("POST /api/deals error:", error)
+    return NextResponse.json(
+      { error: "Deal could not be created" },
+      { status: 500 },
+    )
   }
-
-  deals.push(newDeal)
-  await saveDeals(deals)
-
-  return NextResponse.json(newDeal, { status: 201 })
 }

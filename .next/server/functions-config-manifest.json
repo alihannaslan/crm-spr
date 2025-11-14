@@ -1,9 +1,9 @@
 {
   "version": 1,
   "functions": {
-    "/api/deals": {},
-    "/api/contacts": {},
     "/api/contacts/[id]": {},
+    "/api/contacts": {},
+    "/api/deals": {},
     "/api/deals/[id]": {}
   }
 }
