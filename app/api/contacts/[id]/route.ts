@@ -1,92 +1,97 @@
-import { NextRequest, NextResponse } from "next/server"
-import { kv } from "@/lib/cloudflare-kv"
+import { NextRequest, NextResponse } from "next/server";
+import { kv } from "@/lib/cloudflare-kv";
 
-export const runtime: "edge" = "edge"
+export const runtime = "edge";
+
+const KV_KEY = "contacts";
 
 type Contact = {
-  id: string
-  name: string
-  email?: string
-  phone?: string
-  company?: string
-  createdAt: string
-  updatedAt?: string
-}
-
-const KV_KEY = "contacts"
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  createdAt: string;
+  updatedAt?: string;
+};
 
 async function loadContacts(): Promise<Contact[]> {
-  const raw = await kv.get(KV_KEY)
-  if (!raw) return []
+  const raw = (await kv.get(KV_KEY)) as string | null;
+  if (!raw) return [];
   try {
-    const parsed = JSON.parse(raw as string)
-    return Array.isArray(parsed) ? (parsed as Contact[]) : []
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return []
+    return [];
   }
 }
 
 async function saveContacts(contacts: Contact[]) {
-  await kv.put(KV_KEY, JSON.stringify(contacts))
+  await kv.put(KV_KEY, JSON.stringify(contacts));
 }
 
-type RouteContext = {
-  params: Promise<{ id: string }>
-}
-
-async function resolveId(context: RouteContext) {
-  const { id } = await context.params
-  return id
-}
-
-// GET /api/contacts/[id]
-export async function GET(_req: NextRequest, context: RouteContext) {
-  const contacts = await loadContacts()
-  const contactId = await resolveId(context)
-  const contact = contacts.find((c) => c.id === contactId)
+export async function GET(
+  _req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const { id } = await ctx.params;
+  const contacts = await loadContacts();
+  const contact = contacts.find((c) => c.id === id);
 
   if (!contact) {
-    return NextResponse.json({ error: "Contact not found" }, { status: 404 })
+    return NextResponse.json({ error: "Contact not found" }, { status: 404 });
   }
 
-  return NextResponse.json(contact)
+  return NextResponse.json(contact);
 }
 
-// PUT /api/contacts/[id]
-export async function PUT(req: NextRequest, context: RouteContext) {
-  const contacts = await loadContacts()
-  const contactId = await resolveId(context)
-  const index = contacts.findIndex((c) => c.id === contactId)
+export async function PUT(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const { id } = await ctx.params;
 
-  if (index === -1) {
-    return NextResponse.json({ error: "Contact not found" }, { status: 404 })
+  const contacts = await loadContacts();
+  const i = contacts.findIndex((c) => c.id === id);
+
+  if (i === -1) {
+    return NextResponse.json({ error: "Contact not found" }, { status: 404 });
   }
 
-  const body = (await req.json()) as Partial<Contact>
+  const raw = (await req.json()) as any;
+
+  const name = (raw.name ?? raw.title ?? contacts[i].name).toString().trim();
+  const email = raw.email ?? contacts[i].email;
+  const phone = raw.phone ?? contacts[i].phone;
+  const company = raw.company ?? contacts[i].company;
 
   const updated: Contact = {
-    ...contacts[index],
-    ...body,
-    id: contactId,
+    ...contacts[i],
+    name,
+    email,
+    phone,
+    company,
     updatedAt: new Date().toISOString(),
-  }
+  };
 
-  contacts[index] = updated
-  await saveContacts(contacts)
+  contacts[i] = updated;
+  await saveContacts(contacts);
 
-  return NextResponse.json(updated)
+  return NextResponse.json(updated);
 }
 
-// DELETE /api/contacts/[id]
-export async function DELETE(_req: NextRequest, context: RouteContext) {
-  const contacts = await loadContacts()
-  const contactId = await resolveId(context)
-  const newContacts = contacts.filter((c) => c.id !== contactId)
+export async function DELETE(
+  _req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const { id } = await ctx.params;
+  const contacts = await loadContacts();
+  const filtered = contacts.filter((c) => c.id !== id);
 
-  if (newContacts.length === contacts.length) {
-    return NextResponse.json({ error: "Contact not found" }, { status: 404 })
+  if (filtered.length === contacts.length) {
+    return NextResponse.json({ error: "Contact not found" }, { status: 404 });
   }
 
-  await saveContacts(newContacts)
-  return NextResponse.json({ ok: true })
+  await saveContacts(filtered);
+  return NextResponse.json({ ok: true });
 }

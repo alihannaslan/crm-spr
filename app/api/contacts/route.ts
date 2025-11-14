@@ -1,73 +1,69 @@
-import { NextRequest, NextResponse } from "next/server"
-import { kv } from "@/lib/cloudflare-kv"
+import { NextRequest, NextResponse } from "next/server";
+import { kv } from "@/lib/cloudflare-kv";
 
-export const runtime: "edge" = "edge"
+export const runtime = "edge";
 
-type Deal = {
-  id: string
-  title: string
-  value: number
-  contactId?: string
-  status?: string
-  createdAt: string
-  updatedAt?: string
-}
+const KV_KEY = "contacts";
 
-const KV_KEY = "deals"
+type Contact = {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  createdAt: string;
+  updatedAt?: string;
+};
 
-async function loadDeals(): Promise<Deal[]> {
-  const raw = await kv.get(KV_KEY)
-  if (!raw) return []
+async function loadContacts(): Promise<Contact[]> {
+  const raw = (await kv.get(KV_KEY)) as string | null;
+  if (!raw) return [];
   try {
-    const parsed = JSON.parse(raw as string)
-    return Array.isArray(parsed) ? (parsed as Deal[]) : []
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return []
+    return [];
   }
 }
 
-async function saveDeals(deals: Deal[]) {
-  await kv.put(KV_KEY, JSON.stringify(deals))
+async function saveContacts(contacts: Contact[]) {
+  await kv.put(KV_KEY, JSON.stringify(contacts));
 }
 
-// GET /api/deals
 export async function GET() {
-  const deals = await loadDeals()
-  return NextResponse.json(deals)
+  const contacts = await loadContacts();
+  return NextResponse.json(contacts);
 }
 
-// POST /api/deals
 export async function POST(req: NextRequest) {
-  const body = await req.json()
+  const raw = (await req.json()) as any;
 
-  const { title, value, contactId, status } = body as {
-    title?: string
-    value?: number
-    contactId?: string
-    status?: string
-  }
+  // FRONTEND FORM ve eski API ile uyumlu olacak şekilde fallback
+  const name = (raw.name ?? raw.title ?? "").toString().trim();
+  const email = raw.email ?? "";
+  const phone = raw.phone ?? "";
+  const company = raw.company ?? "";
 
-  if (!title || typeof value !== "number") {
+  if (!name) {
     return NextResponse.json(
-      { error: "title (string) ve value (number) zorunludur" },
-      { status: 400 },
-    )
+      { error: "name alanı zorunludur" },
+      { status: 400 }
+    );
   }
 
-  const deals = await loadDeals()
-  const now = new Date().toISOString()
+  const contacts = await loadContacts();
 
-  const newDeal: Deal = {
+  const newContact: Contact = {
     id: crypto.randomUUID(),
-    title,
-    value,
-    contactId,
-    status: status ?? "open",
-    createdAt: now,
-  }
+    name,
+    email,
+    phone,
+    company,
+    createdAt: new Date().toISOString(),
+  };
 
-  deals.push(newDeal)
-  await saveDeals(deals)
+  contacts.push(newContact);
+  await saveContacts(contacts);
 
-  return NextResponse.json(newDeal, { status: 201 })
+  return NextResponse.json(newContact, { status: 201 });
 }
