@@ -2,40 +2,44 @@
 # Cloudflare Pages Ignore File
 # -------------------------
 
-# Node + git garbage
+# Node + git dosyaları
 node_modules
 .git
 .gitignore
 *.log
 
-# Local env files (prod'da Cloudflare Environment vars kullanılmalı)
+# Local env dosyaları
 .env
 .env.local
 .env.development
 .env.production
 
-# Next.js output directories that should NOT be deployed
+# Next.js cache ve dev artefact'ları
 .next/cache
-.next/types
+.next/cache/**
+.next/types/**
 .next/trace
 .next/trace-build
-.next/diagnostics
+.next/diagnostics/**
 
-# Optional: Source maps (25MB limit geçmesini engeller)
+# Büyük webpack pack dosyalarını tamamen at
+**/*.pack
+
+# Opsiyonel: source map'ler
 .next/**/*.map
 
-# Testing files (optional)
+# Test & coverage
 __tests__/
 coverage/
 *.test.*
 *.spec.*
 
-# OS / IDE trash
+# OS / IDE
 .DS_Store
 .vscode
 .idea
 
-# Package manager logs / leftovers
+# Paket yöneticisi logları
 pnpm-debug.log
 npm-debug.log
 yarn-error.log
