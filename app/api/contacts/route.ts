@@ -4,13 +4,13 @@ import { getContacts, createContact } from "@/lib/cloudflare-kv"
 
 export const runtime = "edge"
 
-// GET /api/contact → tüm contact'lar
+// GET /api/contacts → tüm kişiler
 export async function GET() {
   try {
     const contacts = await getContacts()
     return NextResponse.json(contacts)
   } catch (error) {
-    console.error("GET /api/contact error:", error)
+    console.error("GET /api/contacts error:", error)
     return NextResponse.json(
       { error: "Contacts could not be loaded" },
       { status: 500 },
@@ -18,7 +18,7 @@ export async function GET() {
   }
 }
 
-// POST /api/contact → yeni contact oluştur
+// POST /api/contacts → yeni kişi oluştur
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newContact, { status: 201 })
   } catch (error) {
-    console.error("POST /api/contact error:", error)
+    console.error("POST /api/contacts error:", error)
     return NextResponse.json(
       { error: "Contact could not be created" },
       { status: 500 },

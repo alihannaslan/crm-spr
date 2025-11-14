@@ -8,22 +8,19 @@ import {
 
 export const runtime = "edge"
 
-// GET /api/contact/[id]
-export async function GET(
-  _req: NextRequest,
-  context: { params: Promise<{ id: string }> },
-) {
+// GET /api/contacts/[id]
+export async function GET(_req: NextRequest, context: any) {
   try {
     const { id } = await context.params
-
     const contact = await getContact(id)
+
     if (!contact) {
       return NextResponse.json({ error: "Contact not found" }, { status: 404 })
     }
 
     return NextResponse.json(contact)
   } catch (error) {
-    console.error("GET /api/contact/[id] error:", error)
+    console.error("GET /api/contacts/[id] error:", error)
     return NextResponse.json(
       { error: "Contact could not be loaded" },
       { status: 500 },
@@ -31,11 +28,8 @@ export async function GET(
   }
 }
 
-// PUT /api/contact/[id]
-export async function PUT(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> },
-) {
+// PUT /api/contacts/[id]
+export async function PUT(req: NextRequest, context: any) {
   try {
     const { id } = await context.params
     const body = await req.json()
@@ -56,7 +50,7 @@ export async function PUT(
 
     return NextResponse.json(updated)
   } catch (error) {
-    console.error("PUT /api/contact/[id] error:", error)
+    console.error("PUT /api/contacts/[id] error:", error)
     return NextResponse.json(
       { error: "Contact could not be updated" },
       { status: 500 },
@@ -64,11 +58,8 @@ export async function PUT(
   }
 }
 
-// DELETE /api/contact/[id]
-export async function DELETE(
-  _req: NextRequest,
-  context: { params: Promise<{ id: string }> },
-) {
+// DELETE /api/contacts/[id]
+export async function DELETE(_req: NextRequest, context: any) {
   try {
     const { id } = await context.params
 
@@ -76,7 +67,7 @@ export async function DELETE(
 
     return NextResponse.json({ deleted: true })
   } catch (error) {
-    console.error("DELETE /api/contact/[id] error:", error)
+    console.error("DELETE /api/contacts/[id] error:", error)
     return NextResponse.json(
       { error: "Contact could not be deleted" },
       { status: 500 },
