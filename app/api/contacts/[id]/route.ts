@@ -1,10 +1,7 @@
+// app/api/contacts/[id]/route.ts
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server"
-import {
-  getContact,
-  updateContact,
-  deleteContact,
-} from "@/lib/cloudflare-kv"
+import { getContact, updateContact, deleteContact } from "@/lib/cloudflare-kv"
 
 export const runtime = "edge"
 
@@ -28,18 +25,28 @@ export async function GET(_req: NextRequest, context: any) {
   }
 }
 
-// PUT /api/contacts/[id]
+// PUT /api/contacts/[id] → kısmi update
 export async function PUT(req: NextRequest, context: any) {
   try {
     const { id } = await context.params
     const body = await req.json()
 
-    const updates = {
-      name: body?.name,
-      email: body?.email,
-      phone: body?.phone,
-      company: body?.company,
-      position: body?.position,
+    const updates: any = {}
+
+    if (typeof body?.name !== "undefined") {
+      updates.name = body.name
+    }
+    if (typeof body?.email !== "undefined") {
+      updates.email = body.email
+    }
+    if (typeof body?.phone !== "undefined") {
+      updates.phone = body.phone
+    }
+    if (typeof body?.company !== "undefined") {
+      updates.company = body.company
+    }
+    if (typeof body?.position !== "undefined") {
+      updates.position = body.position
     }
 
     const updated = await updateContact(id, updates)

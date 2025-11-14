@@ -1,3 +1,4 @@
+// app/api/contacts/route.ts
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server"
 import { getContacts, createContact } from "@/lib/cloudflare-kv"
@@ -18,7 +19,7 @@ export async function GET() {
   }
 }
 
-// POST /api/contacts → yeni kişi oluştur
+// POST /api/contacts → yeni kişi
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -31,12 +32,12 @@ export async function POST(req: NextRequest) {
 
     if (!name) {
       return NextResponse.json(
-        { error: "Name is required" },
+        { error: "name is required" },
         { status: 400 },
       )
     }
 
-    const newContact = await createContact({
+    const contact = await createContact({
       name,
       email,
       phone,
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
       position,
     })
 
-    return NextResponse.json(newContact, { status: 201 })
+    return NextResponse.json(contact, { status: 201 })
   } catch (error) {
     console.error("POST /api/contacts error:", error)
     return NextResponse.json(
