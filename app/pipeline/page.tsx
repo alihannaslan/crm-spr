@@ -1,143 +1,203 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { Plus } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { PipelineColumn } from "@/components/pipeline-column"
 import { DealDialog } from "@/components/deal-dialog"
-import { Plus } from "lucide-react"
 import type { Deal, Contact } from "@/lib/cloudflare-kv"
 import { parseJsonResponse } from "@/lib/utils"
 
-const STAGES = [
-  { id: "lead", title: "Potansiyel" },
+const STAGES: { id: Deal["stage"]; title: string }[] = [
+  { id: "lead", title: "Lead" },
   { id: "qualified", title: "Nitelikli" },
   { id: "proposal", title: "Teklif" },
   { id: "negotiation", title: "Pazarlık" },
   { id: "won", title: "Kazanıldı" },
+  { id: "lost", title: "Kaybedildi" },
 ]
 
 export default function PipelinePage() {
   const [deals, setDeals] = useState<Deal[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null)
 
+  // --------------------------------------------------
+  // İlk yüklemede tüm fırsatları ve kişileri çek
+  // --------------------------------------------------
   useEffect(() => {
-    loadData()
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const [dealsRes, contactsRes] = await Promise.all([
+          fetch("/api/deals"),
+          fetch("/api/contacts"),
+        ])
+
+        const dealsData = await parseJsonResponse<Deal[]>(dealsRes)
+        const contactsData = await parseJsonResponse<Contact[]>(contactsRes)
+
+        setDeals(dealsData ?? [])
+        setContacts(contactsData ?? [])
+      } catch (err) {
+        console.error("Error loading pipeline data:", err)
+        setError("Veriler yüklenirken bir hata oluştu.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void loadData()
   }, [])
 
-  const loadData = async () => {
-    try {
-      const [dealsRes, contactsRes] = await Promise.all([fetch("/api/deals"), fetch("/api/contacts")])
-      const [dealsData, contactsData] = await Promise.all([
-        parseJsonResponse<Deal[]>(dealsRes),
-        parseJsonResponse<Contact[]>(contactsRes),
-      ])
-      setDeals(dealsData)
-      setContacts(contactsData)
-    } catch (error) {
-      console.error("[v0] Error loading data:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // --------------------------------------------------
+  // Drag & drop ile stage değiştirme
+  // --------------------------------------------------
+  const handleDrop = async (dealId: string, newStage: Deal["stage"]) => {
+    setDeals((prev) =>
+      prev.map((deal) =>
+        deal.id === dealId
+          ? {
+            ...deal,
+            stage: newStage,
+            updatedAt: new Date().toISOString(),
+          }
+          : deal,
+      ),
+    )
 
-  const handleDrop = async (dealId: string, newStage: string) => {
     try {
-      const response = await fetch(`/api/deals/${dealId}`, {
+      const res = await fetch(`/api/deals/${dealId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stage: newStage }),
       })
-      const updated = await parseJsonResponse<Deal>(response)
-      setDeals(deals.map((d) => (d.id === updated.id ? updated : d)))
-    } catch (error) {
-      console.error("[v0] Error updating deal:", error)
+
+      if (!res.ok) {
+        const text = await res.text()
+        console.error("Failed to update deal stage:", text)
+        throw new Error(text || "Stage güncellenemedi")
+      }
+    } catch (err) {
+      console.error("Error updating deal stage:", err)
+      // Optimistic update geri alma (isteğe bağlı)
     }
   }
 
-  const handleEdit = (deal: Deal) => {
+  // --------------------------------------------------
+  // Dialog aç / kapat
+  // --------------------------------------------------
+  const handleDialogOpenNew = () => {
+    setEditingDeal(null)
+    setDialogOpen(true)
+  }
+
+  const handleEditDeal = (deal: Deal) => {
     setEditingDeal(deal)
     setDialogOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Bu fırsatı silmek istediğinizden emin misiniz?")) return
-
-    try {
-      await fetch(`/api/deals/${id}`, { method: "DELETE" })
-      setDeals(deals.filter((d) => d.id !== id))
-    } catch (error) {
-      console.error("[v0] Error deleting deal:", error)
-    }
-  }
-
-  const handleSave = async (dealData: Partial<Deal>) => {
-    try {
-      if (editingDeal) {
-        const response = await fetch(`/api/deals/${editingDeal.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(dealData),
-        })
-        const updated = await parseJsonResponse<Deal>(response)
-        setDeals(deals.map((d) => (d.id === updated.id ? updated : d)))
-      } else {
-        const response = await fetch("/api/deals", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(dealData),
-        })
-        const newDeal = await parseJsonResponse<Deal>(response)
-        setDeals([...deals, newDeal])
-      }
-      setEditingDeal(null)
-    } catch (error) {
-      console.error("[v0] Error saving deal:", error)
-    }
-  }
-
   const handleDialogChange = (open: boolean) => {
-    setDialogOpen(open)
     if (!open) {
       setEditingDeal(null)
     }
+    setDialogOpen(open)
   }
 
+  // --------------------------------------------------
+  // Yeni fırsat kaydetme / mevcut fırsatı güncelleme
+  // --------------------------------------------------
+  const handleSave = async (
+    data: Omit<Deal, "id" | "createdAt" | "updatedAt">,
+    id?: string,
+  ) => {
+    try {
+      if (id) {
+        // UPDATE
+        const res = await fetch(`/api/deals/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        })
+
+        const updated = await parseJsonResponse<Deal>(res)
+
+        setDeals((prev) =>
+          prev.map((deal) => (deal.id === updated.id ? updated : deal)),
+        )
+      } else {
+        // CREATE
+        const res = await fetch("/api/deals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        })
+
+        const created = await parseJsonResponse<Deal>(res)
+        setDeals((prev) => [...prev, created])
+      }
+    } catch (err) {
+      console.error("Error saving deal:", err)
+      alert("Fırsat kaydedilirken bir hata oluştu.")
+    } finally {
+      setDialogOpen(false)
+      setEditingDeal(null)
+    }
+  }
+
+  // --------------------------------------------------
+  // Render
+  // --------------------------------------------------
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
         <p className="text-muted-foreground">Yükleniyor...</p>
       </div>
     )
   }
 
+  if (error) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <p className="text-destructive">{error}</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4 max-w-[1600px]">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-balance">Satış Hunisi</h1>
-            <p className="text-muted-foreground mt-1">Fırsatlarınızı takip edin</p>
-          </div>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni Fırsat
-          </Button>
+    <div className="flex h-[calc(100vh-4rem)] flex-col">
+      <header className="flex items-center justify-between border-b px-6 py-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Satış Pipeline</h1>
+          <p className="text-sm text-muted-foreground">
+            Fırsatları aşamalara göre takip edin.
+          </p>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <Button onClick={handleDialogOpenNew} size="sm">
+          <Plus className="mr-2 h-4 w-4" />
+          Yeni Fırsat
+        </Button>
+      </header>
+
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 gap-4 overflow-x-auto px-4 py-4">
           {STAGES.map((stage) => (
             <PipelineColumn
               key={stage.id}
-              title={stage.title}
               stage={stage.id}
-              deals={deals}
+              title={stage.title}
+              deals={deals.filter((deal) => deal.stage === stage.id)}
               contacts={contacts}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onDrop={handleDrop}
+              onDropDeal={handleDrop}
+              onEditDeal={handleEditDeal}
             />
           ))}
         </div>

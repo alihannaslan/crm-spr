@@ -1,6 +1,6 @@
 {
-  "/_global-error/page": "app/_global-error/page.js",
   "/_not-found/page": "app/_not-found/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
   "/contacts/page": "app/contacts/page.js",
   "/page": "app/page.js",
   "/pipeline/page": "app/pipeline/page.js",

@@ -1,77 +1,87 @@
 "use client"
 
-import type React from "react"
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DealCard } from "@/components/deal-card"
 import type { Deal, Contact } from "@/lib/cloudflare-kv"
 
-interface PipelineColumnProps {
+type PipelineColumnProps = {
+  stage: Deal["stage"]
   title: string
-  stage: string
   deals: Deal[]
   contacts: Contact[]
-  onEdit: (deal: Deal) => void
-  onDelete: (id: string) => void
-  onDrop: (dealId: string, newStage: string) => void
+  onDropDeal: (dealId: string, newStage: Deal["stage"]) => void
+  onEditDeal: (deal: Deal) => void
 }
 
-export function PipelineColumn({ title, stage, deals, contacts, onEdit, onDelete, onDrop }: PipelineColumnProps) {
-  const stageDeals = deals.filter((deal) => deal.stage === stage)
-  const totalValue = stageDeals.reduce((sum, deal) => sum + deal.value, 0)
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("tr-TR", {
-      style: "currency",
-      currency: "TRY",
-    }).format(value)
+export function PipelineColumn({
+  stage,
+  title,
+  deals,
+  contacts,
+  onDropDeal,
+  onEditDeal,
+}: PipelineColumnProps) {
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    const dealId = event.dataTransfer.getData("text/plain")
+    if (!dealId) return
+    onDropDeal(dealId, stage)
   }
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    const dealId = e.dataTransfer.getData("dealId")
-    if (dealId) {
-      onDrop(dealId, stage)
-    }
+  const getContactName = (contactId: string) => {
+    const contact = contacts.find((c) => c.id === contactId)
+    return contact?.name ?? "Kişi yok"
   }
 
   return (
-    <div className="flex-shrink-0 w-80" onDragOver={handleDragOver} onDrop={handleDrop}>
-      <Card className="h-full flex flex-col">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold">{title}</CardTitle>
-            <span className="text-xs text-muted-foreground">{stageDeals.length}</span>
+    <div
+      className="flex min-w-[260px] flex-1 flex-col rounded-lg bg-muted/40 p-3"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          {title}
+        </h2>
+        <span className="text-xs text-muted-foreground">
+          {deals.length} fırsat
+        </span>
+      </div>
+
+      <div className="flex-1 space-y-2">
+        {deals.map((deal) => (
+          <button
+            key={deal.id}
+            type="button"
+            draggable
+            onDragStart={(event) =>
+              event.dataTransfer.setData("text/plain", deal.id)
+            }
+            onClick={() => onEditDeal(deal)}
+            className="w-full rounded-md border bg-background px-3 py-2 text-left shadow-sm transition hover:border-primary/60 hover:shadow"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">{deal.title}</span>
+              {deal.value ? (
+                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  ₺{deal.value.toLocaleString("tr-TR")}
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {getContactName(deal.contactId)}
+            </div>
+          </button>
+        ))}
+
+        {deals.length === 0 && (
+          <div className="rounded-md border border-dashed border-muted-foreground/30 p-3 text-center text-xs text-muted-foreground">
+            Bu aşamada fırsat yok
           </div>
-          <p className="text-xs font-medium text-muted-foreground mt-1">{formatCurrency(totalValue)}</p>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto space-y-3 pt-0">
-          {stageDeals.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-8">Henüz fırsat yok</p>
-          ) : (
-            stageDeals.map((deal) => (
-              <div
-                key={deal.id}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData("dealId", deal.id)
-                }}
-              >
-                <DealCard
-                  deal={deal}
-                  contact={contacts.find((c) => c.id === deal.contactId)}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                />
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+        )}
+      </div>
     </div>
   )
 }

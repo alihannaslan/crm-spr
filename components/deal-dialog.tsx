@@ -1,173 +1,241 @@
 "use client"
 
-import type React from "react"
+import * as React from "react"
+import { useEffect, useState } from "react"
+import { Loader2 } from "lucide-react"
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+
 import type { Deal, Contact } from "@/lib/cloudflare-kv"
+
+type DealFormState = {
+  title: string
+  value: number
+  contactId: string
+  stage: Deal["stage"]
+  description: string
+}
 
 interface DealDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  deal?: Deal | null
+  deal: Deal | null
   contacts: Contact[]
-  onSave: (deal: Partial<Deal>) => void
+  onSave: (data: Omit<Deal, "id" | "createdAt" | "updatedAt">, id?: string) => Promise<void> | void
 }
 
-const STAGES = [
-  { value: "lead", label: "Potansiyel" },
-  { value: "qualified", label: "Nitelikli" },
-  { value: "proposal", label: "Teklif" },
-  { value: "negotiation", label: "Pazarlık" },
-  { value: "won", label: "Kazanıldı" },
-  { value: "lost", label: "Kaybedildi" },
-]
+const EMPTY_FORM: DealFormState = {
+  title: "",
+  value: 0,
+  contactId: "",
+  stage: "lead",
+  description: "",
+}
 
-export function DealDialog({ open, onOpenChange, deal, contacts, onSave }: DealDialogProps) {
-  type FormState = {
-    title: string
-    value: string
-    contactId: string
-    stage: Deal["stage"]
-    description: string
-  }
+export function DealDialog({
+  open,
+  onOpenChange,
+  deal,
+  contacts,
+  onSave,
+}: DealDialogProps) {
+  const [formData, setFormData] = useState<DealFormState>(EMPTY_FORM)
+  const [saving, setSaving] = useState(false)
 
-  const [formData, setFormData] = useState<FormState>({
-    title: deal?.title ?? "",
-    value: deal?.value?.toString() ?? "",
-    contactId: deal?.contactId ?? "",
-    stage: deal?.stage ?? "lead",
-    description: deal?.description ?? "",
-  })
-
+  // Dialog açıldığında veya editlenecek deal değiştiğinde formu doldur
   useEffect(() => {
-    if (deal) {
+    if (deal && open) {
       setFormData({
-        title: deal.title,
-        value: deal.value.toString(),
+        title: deal.title ?? "",
+        value: deal.value ?? 0,
         contactId: deal.contactId ?? "",
-        stage: deal.stage,
+        stage: deal.stage ?? "lead",
         description: deal.description ?? "",
       })
-    } else {
-      setFormData({
-        title: "",
-        value: "",
-        contactId: "",
-        stage: "lead",
-        description: "",
-      })
+    } else if (open && !deal) {
+      setFormData(EMPTY_FORM)
     }
   }, [deal, open])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSave({
-      ...formData,
-      value: Number.parseFloat(formData.value),
-    })
-    onOpenChange(false)
+  const handleChange =
+    (field: keyof DealFormState) =>
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const value =
+        field === "value" ? Number(event.target.value || 0) : event.target.value
+
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }))
+    }
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+
+    // Kişi seçilmeden kaydetmeye çalışma
+    if (!formData.contactId) {
+      alert("Lütfen bir kişi seçin.")
+      return
+    }
+
+    try {
+      setSaving(true)
+
+      const payload: Omit<Deal, "id" | "createdAt" | "updatedAt"> = {
+        title: formData.title,
+        value: Number.isFinite(formData.value) ? formData.value : 0,
+        contactId: formData.contactId,
+        stage: formData.stage,
+        description: formData.description,
+      }
+
+      await onSave(payload, deal?.id)
+      onOpenChange(false)
+    } catch (error) {
+      console.error("Error saving deal:", error)
+      alert("Fırsat kaydedilirken bir hata oluştu.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      setFormData(EMPTY_FORM)
+    }
+    onOpenChange(next)
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
-        <form onSubmit={handleSubmit}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <DialogHeader>
-            <DialogTitle>{deal ? "Fırsatı Düzenle" : "Yeni Fırsat Ekle"}</DialogTitle>
-            <DialogDescription>
-              {deal ? "Fırsat bilgilerini güncelleyin." : "Yeni bir satış fırsatı eklemek için bilgileri doldurun."}
-            </DialogDescription>
+            <DialogTitle>{deal ? "Fırsatı Düzenle" : "Yeni Fırsat"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
+
+          <div className="space-y-4">
+            <div className="space-y-2">
               <Label htmlFor="title">Başlık</Label>
               <Input
                 id="title"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Yeni proje fırsatı"
+                onChange={handleChange("title")}
+                placeholder="Örn. Synora Retinol Kampanyası"
                 required
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="value">Değer (TRY)</Label>
-              <Input
-                id="value"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.value}
-                onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                placeholder="50000"
-                required
-              />
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="value">Değer (₺)</Label>
+                <Input
+                  id="value"
+                  type="number"
+                  value={formData.value === 0 ? "" : formData.value}
+                  onChange={handleChange("value")}
+                  placeholder="Örn. 25.000"
+                  min={0}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Kişi</Label>
+                <Select
+                  value={formData.contactId}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, contactId: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        contacts.length === 0
+                          ? "Kişi yok, önce kişi ekleyin"
+                          : "Bir kişi seçin"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contacts.length === 0 ? (
+                      <SelectItem value="__no_contact" disabled>
+                        Kayıtlı kişi yok
+                      </SelectItem>
+                    ) : (
+                      contacts.map((contact) => (
+                        <SelectItem key={contact.id} value={contact.id}>
+                          {contact.name}
+                          {contact.company ? ` — ${contact.company}` : ""}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="contact">Kişi</Label>
-              <Select
-                value={formData.contactId}
-                onValueChange={(value) => setFormData({ ...formData, contactId: value })}
-                required
-              >
-                <SelectTrigger id="contact">
-                  <SelectValue placeholder="Kişi seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {contacts.map((contact) => (
-                    <SelectItem key={contact.id} value={contact.id}>
-                      {contact.name} - {contact.company || contact.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="stage">Aşama</Label>
+
+            <div className="space-y-2">
+              <Label>Aşama</Label>
               <Select
                 value={formData.stage}
-                onValueChange={(value) => setFormData({ ...formData, stage: value as Deal["stage"] })}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    stage: value as Deal["stage"],
+                  }))
+                }
               >
-                <SelectTrigger id="stage">
-                  <SelectValue />
+                <SelectTrigger>
+                  <SelectValue placeholder="Bir aşama seçin" />
                 </SelectTrigger>
                 <SelectContent>
-                  {STAGES.map((stage) => (
-                    <SelectItem key={stage.value} value={stage.value}>
-                      {stage.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="lead">Lead</SelectItem>
+                  <SelectItem value="qualified">Nitelikli</SelectItem>
+                  <SelectItem value="proposal">Teklif</SelectItem>
+                  <SelectItem value="negotiation">Pazarlık</SelectItem>
+                  <SelectItem value="won">Kazanıldı</SelectItem>
+                  <SelectItem value="lost">Kaybedildi</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">Açıklama</Label>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Notlar</Label>
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Fırsat detayları..."
+                onChange={handleChange("description")}
+                placeholder="Bu fırsatla ilgili önemli notlar..."
                 rows={3}
               />
             </div>
           </div>
+
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               İptal
             </Button>
-            <Button type="submit">Kaydet</Button>
+            <Button type="submit" disabled={saving || contacts.length === 0}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {deal ? "Kaydet" : "Oluştur"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
